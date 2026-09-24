@@ -1,4 +1,4 @@
-export const contentSections = ["notes", "essays", "books", "projects"] as const;
+export const contentSections = ["notes", "books", "playground"] as const;
 
 export type ContentSection = (typeof contentSections)[number];
 
@@ -9,11 +9,6 @@ export const sectionDetails: Record<
   notes: {
     title: "Notes",
     description: "Small observations, useful fragments, and things worth remembering.",
-    index: "01",
-  },
-  essays: {
-    title: "Essays",
-    description: "Longer attempts to understand design, work, and an attentive life.",
     index: "02",
   },
   books: {
@@ -21,9 +16,9 @@ export const sectionDetails: Record<
     description: "A reading ledger: what is open, what stayed, and what changed my mind.",
     index: "03",
   },
-  projects: {
-    title: "Projects",
-    description: "Selected experiments, tools, and works in progress.",
+  playground: {
+    title: "Playground",
+    description: "Experiments, small tools, and anything I try or make.",
     index: "04",
   },
 };
@@ -38,12 +33,10 @@ export const siteConfig = {
   description: "A web developer who loves to build stuff.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   navigation: [
-    { label: "Home", href: "/", index: "00" },
-    ...contentSections.map((section) => ({
-      label: sectionDetails[section].title,
-      href: `/${section}`,
-      index: sectionDetails[section].index,
-    })),
+    { label: "Home", href: "/", shortcut: "1" },
+    { label: "Notes", href: "/notes", shortcut: "2" },
+    { label: "Books", href: "/books", shortcut: "3" },
+    { label: "Playground", href: "/playground", shortcut: "4" },
   ],
   links: [
     { label: "Email", href: "mailto:hello@example.com" },

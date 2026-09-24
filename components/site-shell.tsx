@@ -1,16 +1,16 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, type ComponentType, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpenIcon,
-  FileTextIcon,
-  FolderIcon,
+  FlaskConicalIcon,
   HouseIcon,
   StickyNoteIcon,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
   TooltipContent,
@@ -22,13 +22,48 @@ import { siteConfig } from "@/lib/site";
 const navigationIcons: Record<string, ComponentType<{ "aria-hidden"?: boolean }>> = {
   "/": HouseIcon,
   "/notes": StickyNoteIcon,
-  "/essays": FileTextIcon,
   "/books": BookOpenIcon,
-  "/projects": FolderIcon,
+  "/playground": FlaskConicalIcon,
 };
+
+const shortcutDestinations: ReadonlyMap<string, string> = new Map(
+  siteConfig.navigation.map((item) => [item.shortcut, item.href]),
+);
 
 function BottomNavigation() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    function navigateWithShortcut(event: KeyboardEvent) {
+      const target = event.target;
+      const isTyping =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.matches("input, textarea, select, [role='textbox']"));
+
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        isTyping
+      ) {
+        return;
+      }
+
+      const destination = shortcutDestinations.get(event.key);
+      if (!destination) return;
+
+      event.preventDefault();
+      router.push(destination);
+    }
+
+    window.addEventListener("keydown", navigateWithShortcut);
+    return () => window.removeEventListener("keydown", navigateWithShortcut);
+  }, [router]);
 
   return (
     <TooltipProvider delay={450}>
@@ -50,7 +85,9 @@ function BottomNavigation() {
                   render={
                     <Link
                       href={item.href}
+                      prefetch
                       aria-current={isActive ? "page" : undefined}
+                      aria-keyshortcuts={item.shortcut}
                       aria-label={item.label}
                       className={buttonVariants({
                         size: "icon-lg",
@@ -64,7 +101,7 @@ function BottomNavigation() {
                   <span className="sr-only">{item.label}</span>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={10}>
-                  {item.label}
+                  {item.label} <Kbd>{item.shortcut}</Kbd>
                 </TooltipContent>
               </Tooltip>
             );

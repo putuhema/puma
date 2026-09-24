@@ -2,6 +2,8 @@ export const contentSections = ["notes", "books", "playground"] as const;
 
 export type ContentSection = (typeof contentSections)[number];
 
+export const librarySidebarCookie = "puma_library_sidebar";
+
 export const sectionDetails: Record<
   ContentSection,
   { title: string; description: string; index: string }

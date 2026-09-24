@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { EntryList } from "@/components/entry-list";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { getEntries } from "@/lib/content";
 import {
   contentSections,
@@ -42,6 +48,24 @@ export default async function SectionPage({ params }: SectionPageProps) {
 
   const details = sectionDetails[section];
   const entries = getEntries(section);
+
+  if (section === "notes" || section === "books") {
+    const firstEntry = entries[0];
+    if (firstEntry) redirect(firstEntry.href);
+
+    return (
+      <main className="mx-auto flex min-h-[calc(100svh-7rem)] w-full max-w-4xl items-center px-5 py-20 sm:px-10">
+        <Empty className="min-h-80 border">
+          <EmptyHeader>
+            <EmptyTitle>This chapter is still open.</EmptyTitle>
+            <EmptyDescription>
+              Add an MDX file to <code>content/{section}</code> and its title will appear in the sidebar.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </main>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-10 sm:py-16 lg:px-16 lg:py-20">

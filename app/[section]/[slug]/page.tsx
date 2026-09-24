@@ -58,7 +58,10 @@ export default async function EntryPage({ params }: EntryPageProps) {
   const Content = mdxModule.default;
 
   return (
-    <MdxArticle entry={entry}>
+    <MdxArticle
+      entry={entry}
+      reader={entry.section === "notes" || entry.section === "books"}
+    >
       <Content />
     </MdxArticle>
   );

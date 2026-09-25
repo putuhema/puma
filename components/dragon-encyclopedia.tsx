@@ -270,7 +270,11 @@ export function DragonEncyclopedia({ dragons }: { dragons: Dragon[] }) {
                       : "translateY(10px) scale(0.96)",
                   }}
                 >
-                  <div className={styles.info}>
+                  <div
+                    className={styles.info}
+                    data-active={isActive && !selectedDragon ? "true" : "false"}
+                    aria-hidden={!isActive || selectedDragon !== null}
+                  >
                     <p className={styles.origin}>{dragon.origin}</p>
                     <h2 className={styles.name}>{dragon.name}</h2>
                     <p className={styles.size}>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { IBM_Plex_Sans, MedievalSharp, Newsreader } from "next/font/google";
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,12 @@ const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],
   style: ["normal", "italic"],
+});
+
+const medieval = MedievalSharp({
+  variable: "--font-medieval",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -42,7 +48,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f4f0e7",
+  themeColor: "#F0E9DB",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -54,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         "h-full scroll-smooth antialiased motion-reduce:scroll-auto",
         plexSans.variable,
         newsreader.variable,
+        medieval.variable,
       )}
     >
       <body className="flex min-h-full flex-col [-webkit-tap-highlight-color:transparent]">

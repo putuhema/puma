@@ -45,7 +45,7 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(0.965 0.012 92);
+  --background: #f0e9db;
   --foreground: oklch(0.225 0.014 72);
   --card: oklch(0.978 0.009 92);
   --card-foreground: oklch(0.225 0.014 72);
@@ -81,10 +81,20 @@
 
   html {
     @apply bg-background font-sans;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   ::selection {

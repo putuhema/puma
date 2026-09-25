@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Pixel",
+    "shortDescription": "A pocket-sized spark with quick wings, a curious stare, and far more nerve than its scale suggests.",
+    "origin": "Puma's field notes",
+    "sizeMeters": 1.2,
+    "image": "/dragons/Pixel.png"
+  },
+  {
+    "name": "Vhrax",
+    "shortDescription": "A lean young hunter built for sharp turns, sudden climbs, and vanishing into high cloud.",
+    "origin": "Puma's field notes",
+    "sizeMeters": 18,
+    "image": "/dragons/vhrax.png"
+  },
+  {
+    "name": "Dreamfyre",
+    "shortDescription": "A pale blue she-dragon whose silver markings and smoke-blue flame made her unmistakable in flight.",
+    "origin": "House of the Dragon",
+    "sizeMeters": 40,
+    "image": "/dragons/deamfire.png"
+  },
+  {
+    "name": "Caraxes",
+    "shortDescription": "The Blood Wyrm: battle-scarred, red-scaled, and famous for an unusually long neck and ferocious temper.",
+    "origin": "House of the Dragon",
+    "sizeMeters": 55,
+    "image": "/dragons/caraxes.png"
+  },
+  {
+    "name": "Vhagar",
+    "shortDescription": "The last living dragon of Aegon's Conquest era, ancient enough to make castles look temporary.",
+    "origin": "House of the Dragon",
+    "sizeMeters": 90,
+    "image": "/dragons/vhagar.png"
+  }
+]

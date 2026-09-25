@@ -19,8 +19,8 @@ export const sectionDetails: Record<
     index: "03",
   },
   playground: {
-    title: "Playground",
-    description: "Experiments, small tools, and anything I try or make.",
+    title: "The Dragon Index",
+    description: "A comparative encyclopedia of dragons, ordered from smallest to largest.",
     index: "04",
   },
 };
@@ -38,7 +38,7 @@ export const siteConfig = {
     { label: "Home", href: "/", shortcut: "1" },
     { label: "Notes", href: "/notes", shortcut: "2" },
     { label: "Books", href: "/books", shortcut: "3" },
-    { label: "Playground", href: "/playground", shortcut: "4" },
+    { label: "Dragons", href: "/playground", shortcut: "4" },
   ],
   links: [
     { label: "Email", href: "mailto:hello@example.com" },

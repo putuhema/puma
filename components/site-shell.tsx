@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
-import { LiquidGlassNavigation } from "@/components/liquid-glass-navigation";
+import { IllustratedBottomNavigation } from "@/components/illustrated-bottom-navigation";
+import { SoundControl, SoundProvider } from "@/components/sound-control";
 
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-svh flex-col pb-28">
-      {children}
-      <LiquidGlassNavigation />
-    </div>
+    <SoundProvider>
+      <div className="flex min-h-dvh flex-col pb-28">
+        {children}
+        <SoundControl />
+        <IllustratedBottomNavigation />
+      </div>
+    </SoundProvider>
   );
 }

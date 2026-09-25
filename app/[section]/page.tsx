@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { DragonEncyclopedia, type Dragon } from "@/components/dragon-encyclopedia";
+import dragons from "@/data/dragons.json";
 import { EntryList } from "@/components/entry-list";
 import {
   Empty,
@@ -48,6 +50,10 @@ export default async function SectionPage({ params }: SectionPageProps) {
 
   const details = sectionDetails[section];
   const entries = getEntries(section);
+
+  if (section === "playground") {
+    return <DragonEncyclopedia dragons={dragons satisfies Dragon[]} />;
+  }
 
   if (section === "notes" || section === "books") {
     const firstEntry = entries[0];

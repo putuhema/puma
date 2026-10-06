@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- Field Station P-4: a little CRT set with rabbit ears, Mr. P on the screen. -->
+  <!-- Rabbit-ear antennae -->
+  <g fill="#9aa59c">
+    <rect x="14" y="8" width="1" height="1"/><rect x="13" y="7" width="1" height="1"/><rect x="12" y="6" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/>
+    <rect x="17" y="8" width="1" height="1"/><rect x="18" y="7" width="1" height="1"/><rect x="19" y="6" width="1" height="1"/><rect x="20" y="5" width="1" height="1"/><rect x="21" y="4" width="1" height="1"/>
+  </g>
+  <rect x="8" y="2" width="3" height="3" fill="#ff7a2e"/>
+  <rect x="21" y="2" width="3" height="3" fill="#ff7a2e"/>
+  <!-- Casing -->
+  <rect x="1" y="9" width="30" height="22" rx="4" fill="#2337f0"/>
+  <rect x="2" y="10" width="28" height="20" rx="3" fill="#1b2bbf"/>
+  <!-- Screen -->
+  <rect x="4" y="12" width="21" height="16" rx="2" fill="#050605"/>
+  <!-- Mr. P -->
+  <g fill="#ff7a2e">
+    <rect x="11" y="15" width="7" height="1"/>
+    <rect x="10" y="16" width="9" height="1"/>
+    <rect x="9" y="17" width="11" height="6"/>
+    <rect x="10" y="23" width="9" height="1"/>
+    <rect x="11" y="24" width="7" height="1"/>
+  </g>
+  <rect x="11" y="18" width="2" height="2" fill="#1d2a2a"/>
+  <rect x="16" y="18" width="2" height="2" fill="#1d2a2a"/>
+  <rect x="11" y="18" width="1" height="1" fill="#ffffff"/>
+  <rect x="16" y="18" width="1" height="1" fill="#ffffff"/>
+  <rect x="10" y="21" width="1" height="1" fill="#ff4f7b"/>
+  <rect x="18" y="21" width="1" height="1" fill="#ff4f7b"/>
+  <rect x="13" y="21" width="3" height="1" fill="#1d2a2a"/>
+  <!-- Scanlines -->
+  <g fill="#000" opacity="0.16">
+    <rect x="4" y="13" width="21" height="1"/><rect x="4" y="16" width="21" height="1"/><rect x="4" y="19" width="21" height="1"/><rect x="4" y="22" width="21" height="1"/><rect x="4" y="25" width="21" height="1"/>
+  </g>
+  <!-- Knobs and the record light -->
+  <rect x="26" y="13" width="3" height="3" fill="#f4f6ff"/>
+  <rect x="26" y="18" width="3" height="3" fill="#f4f6ff"/>
+  <rect x="27" y="25" width="2" height="2" fill="#ff4b3e"/>
+</svg>

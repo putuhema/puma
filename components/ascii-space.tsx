@@ -75,9 +75,10 @@ export function AsciiSpace({ className }: { className?: string }) {
       }));
     }
 
-    function cell(glyph: string, col: number, row: number, color: string, alpha: number) {
+    // Colours are set once per batch, not per glyph: parsing a colour string
+    // a thousand times a frame is most of what drawing ASCII costs.
+    function cell(glyph: string, col: number, row: number, alpha: number) {
       context!.globalAlpha = alpha;
-      context!.fillStyle = color;
       context!.fillText(glyph, col * cellWidth, row * cellHeight);
     }
 
@@ -86,6 +87,7 @@ export function AsciiSpace({ className }: { className?: string }) {
       const centreRow = Math.round(body.y * rows);
       const { radius } = body;
       const ringOuter = radius * 2;
+      context!.fillStyle = body.color;
       const light = { x: -0.6, y: -0.55, z: 0.58 };
       for (let row = -Math.ceil(ringOuter); row <= ringOuter; row++) {
         for (let col = -Math.ceil(ringOuter * 2); col <= ringOuter * 2; col++) {
@@ -102,7 +104,9 @@ export function AsciiSpace({ className }: { className?: string }) {
             const behind = ringY < 0;
             if (onRing && !(inside && behind)) {
               const glyph = reach > 0.84 ? "~" : "=";
-              cell(glyph, centreCol + col, centreRow + row, body.ring, 0.7);
+              context!.fillStyle = body.ring;
+              cell(glyph, centreCol + col, centreRow + row, 0.7);
+              context!.fillStyle = body.color;
               continue;
             }
           }
@@ -112,7 +116,7 @@ export function AsciiSpace({ className }: { className?: string }) {
           // Bands across the surface, drifting as it turns.
           const band = 0.12 * Math.sin(y * 9 + Math.sin(x * 3 + time * body.spin) * 1.5);
           const level = Math.min(ramp.length - 1, Math.max(1, Math.round((shade + band) * (ramp.length - 1))));
-          cell(ramp[level], centreCol + col, centreRow + row, body.color, 0.35 + shade * 0.5);
+          cell(ramp[level], centreCol + col, centreRow + row, 0.35 + shade * 0.5);
         }
       }
     }
@@ -123,10 +127,11 @@ export function AsciiSpace({ className }: { className?: string }) {
       context!.font = `${cellHeight}px ${font}`;
       context!.textBaseline = "top";
 
+      context!.fillStyle = "#e3ece4";
       for (const star of stars) {
         const glow = reduceMotion ? 1 : 0.5 + 0.5 * Math.sin(time * star.rate + star.phase);
         const glyph = star.glyph === "*" && !reduceMotion ? twinkle[Math.floor(time * star.rate + star.phase) % 4] : star.glyph;
-        cell(glyph, star.col, star.row, "#e3ece4", star.bright * (0.35 + glow * 0.65));
+        cell(glyph, star.col, star.row, star.bright * (0.35 + glow * 0.65));
       }
       for (const body of bodies) drawBody(body, time);
 
@@ -139,8 +144,9 @@ export function AsciiSpace({ className }: { className?: string }) {
           comet.col += (comet.speed * frameMs) / 1000;
           comet.row += (comet.speed * 0.35 * frameMs) / 1000;
           const tail = "*=-~·";
+          context!.fillStyle = "#ffd23f";
           for (let index = 0; index < tail.length; index++) {
-            cell(tail[index], Math.round(comet.col) - index, Math.round(comet.row - index * 0.35), "#ffd23f", 0.9 - index * 0.17);
+            cell(tail[index], Math.round(comet.col) - index, Math.round(comet.row - index * 0.35), 0.9 - index * 0.17);
           }
           if (comet.col - tail.length > cols || comet.row > rows) comet = null;
         }
@@ -157,9 +163,16 @@ export function AsciiSpace({ className }: { className?: string }) {
     draw(0);
     if (reduceMotion) return () => resizer.disconnect();
 
-    const timer = window.setInterval(() => draw(performance.now() / 1000), frameMs);
+    // Only paint what can be seen: not in a background tab, not scrolled away.
+    let onScreen = true;
+    const watcher = new IntersectionObserver(([entry]) => (onScreen = entry.isIntersecting));
+    watcher.observe(element);
+    const timer = window.setInterval(() => {
+      if (onScreen && !document.hidden) draw(performance.now() / 1000);
+    }, frameMs);
     return () => {
       window.clearInterval(timer);
+      watcher.disconnect();
       resizer.disconnect();
     };
   }, []);

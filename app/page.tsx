@@ -18,9 +18,8 @@ function personData() {
   };
 }
 
-export default async function Home({ searchParams }: PageProps<"/">) {
-  const { ask } = await searchParams;
-
+/** The desk is static; a question in the link (?ask=…) is read in the browser. */
+export default function Home() {
   return (
     <>
       <script
@@ -28,10 +27,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         // Escaped so nothing in the profile can close the script tag.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(personData()).replace(/</g, "\\u003c") }}
       />
-      <TransmissionDesk
-        archive={getArchive()}
-        initialAsk={typeof ask === "string" ? ask.slice(0, 200) : undefined}
-      />
+      <TransmissionDesk archive={getArchive()} />
     </>
   );
 }

@@ -8,10 +8,10 @@ import { useSfx } from "@/components/sound-control";
 import { destination, localReply, tuningReply, unclearReply, type Reply } from "@/lib/station-replies";
 import type { Archive, ChatEvent, ChatRequest, Instrument, Transmission } from "@/lib/transmission";
 
-/** A pause before canned replies, so the line still feels like it travels. */
-const localDelayMs = 420;
-/** Long enough to read "tuning to…" before the channel changes. */
-const tuningDelayMs = 1200;
+/** A beat before canned replies, so the line still feels like it travels. */
+const localDelayMs = 220;
+/** Long enough to catch "tuning to…" before the channel changes, and no longer. */
+const tuningDelayMs = 650;
 
 function stamp() {
   return new Intl.DateTimeFormat("en-GB", {

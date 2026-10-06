@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useCrtBulge } from "@/components/crt-bulge";
 import { CrtOverlay } from "@/components/crt-overlay";
-import { RemoteControl } from "@/components/remote-control";
 import { usePreferences } from "@/components/set-preferences";
 import { useSfx, useSound } from "@/components/sound-control";
 import { StampToast } from "@/components/stamp-toast";
@@ -24,6 +23,58 @@ import { cn } from "@/lib/utils";
 const DockedMrP = dynamic(() => import("@/components/docked-mr-p").then((module) => module.DockedMrP), {
   ssr: false,
 });
+
+/** The remote (and its animation library) only loads on touch screens, where it's used. */
+const RemoteControl = dynamic(() => import("@/components/remote-control").then((module) => module.RemoteControl), {
+  ssr: false,
+});
+
+const coarsePointer = "(pointer: coarse)";
+function subscribeToPointer(onChange: () => void) {
+  const query = window.matchMedia(coarsePointer);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/**
+ * Whether this machine can afford the full lens. It redraws the whole picture
+ * through an SVG filter every frame, so it's skipped on low-core machines and
+ * switched off for the visit if frames start dropping once it's on.
+ */
+function useLensBudget(active: boolean) {
+  const [affordable, setAffordable] = useState(true);
+
+  useEffect(() => {
+    if (!active || !affordable) return;
+    if ((navigator.hardwareConcurrency ?? 8) <= 4) {
+      const timer = window.setTimeout(() => setAffordable(false), 0);
+      return () => window.clearTimeout(timer);
+    }
+    // Two seconds of frame times, once things have settled.
+    const frames: number[] = [];
+    let last = 0;
+    let frame = 0;
+    const start = window.setTimeout(() => {
+      const tick = (now: number) => {
+        if (last) frames.push(now - last);
+        last = now;
+        if (frames.length < 120) frame = requestAnimationFrame(tick);
+        else {
+          frames.sort((a, b) => a - b);
+          // A quarter of frames missing 60fps by a clear margin: too slow.
+          if (frames[Math.floor(frames.length * 0.75)] > 24) setAffordable(false);
+        }
+      };
+      frame = requestAnimationFrame(tick);
+    }, 1500);
+    return () => {
+      window.clearTimeout(start);
+      cancelAnimationFrame(frame);
+    };
+  }, [active, affordable]);
+
+  return affordable;
+}
 
 /** ↑ ↑ ↓ ↓ ← → ← → B A: the way to the channel that isn't on the guide. */
 const konami = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
@@ -55,7 +106,9 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
    */
   const { effects, lens: fullLens, toggleLens } = usePreferences();
   const { filters: lensFilters, available: lensAvailable } = useCrtBulge();
-  const bulging = fullLens && lensAvailable && effects;
+  const lensAffordable = useLensBudget(fullLens && lensAvailable && effects);
+  const bulging = fullLens && lensAvailable && effects && lensAffordable;
+  const touch = useSyncExternalStore(subscribeToPointer, () => window.matchMedia(coarsePointer).matches, () => false);
   const previousPath = useRef(pathname);
   /** The page Back is rewinding to, while the tape rolls. */
   const [rewindPath, setRewindPath] = useState<string | null>(null);
@@ -79,6 +132,21 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
     countVisit();
     logChannel(window.location.pathname, siteConfig.navigation.map((item) => item.href));
   }, []);
+
+  // Most channel changes come from Mr. P, a slash command or a key, not a
+  // link Next.js can see, so every channel is fetched ahead once things are
+  // idle; tuning then lands instantly.
+  useEffect(() => {
+    const warm = () => {
+      for (const item of [...siteConfig.navigation, ...siteConfig.extras]) router.prefetch(item.href);
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(warm, { timeout: 4000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timer = window.setTimeout(warm, 2000);
+    return () => window.clearTimeout(timer);
+  }, [router]);
 
   // Back (or forward) through history rewinds the tape.
   useEffect(() => {
@@ -241,7 +309,7 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
       <CrtOverlay curvedGlass={lensAvailable && effects} />
       <VcrOsd rewinding={rewinding} />
       <StampToast />
-      <RemoteControl onPower={switchOff} />
+      {touch && <RemoteControl onPower={switchOff} />}
       {power === "off" && (
         <button
           type="button"

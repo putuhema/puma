@@ -12,7 +12,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AsciiSpace } from "@/components/ascii-space";
 import { InstrumentMount } from "@/components/instruments";
 import { KeyboardMap } from "@/components/keyboard-map";
-import { MrP3D } from "@/components/mr-p-3d";
+import dynamic from "next/dynamic";
 import { useSlashCommands } from "@/components/slash-commands";
 import { useSfx } from "@/components/sound-control";
 import { LineAnnouncer, PrintedText, ThinkingDots } from "@/components/speech";
@@ -27,6 +27,15 @@ import { stationPhase } from "@/lib/schedule";
 import { awardStamp } from "@/lib/stamps";
 import { bootGreeting, busyPrompts, greetingFor, linePrompts, tour, touredKey } from "@/lib/station-replies";
 import type { Archive } from "@/lib/transmission";
+
+/**
+ * Mr. P brings Three.js with him, so he loads alongside the desk rather than
+ * before it: the line takes typing straight away, and he pops in a beat later.
+ */
+const MrP3D = dynamic(() => import("@/components/mr-p-3d").then((module) => module.MrP3D), {
+  ssr: false,
+  loading: () => <div aria-hidden="true" className="size-full" />,
+});
 
 function isTypingTarget(target: EventTarget | null) {
   return (
@@ -44,13 +53,7 @@ function isTypingTarget(target: EventTarget | null) {
  * anywhere, ↑ to recall, Alt+↑ into the latest instrument, Esc to close the
  * bubble, ? for the full map.
  */
-export function TransmissionDesk({
-  archive,
-  initialAsk,
-}: {
-  archive: Archive;
-  initialAsk?: string;
-}) {
+export function TransmissionDesk({ archive }: { archive: Archive }) {
   const reduceMotion = useReducedMotion();
   const sound = useSfx();
   const { setStatus, screen } = useStation();
@@ -66,7 +69,6 @@ export function TransmissionDesk({
   const greeted = useRef(false);
   const [draft, setDraft] = useState("");
   const [keymapOpen, setKeymapOpen] = useState(false);
-  const pendingAsk = useRef(initialAsk ?? null);
   const recallIndex = useRef(-1);
   const input = useRef<HTMLInputElement>(null);
   const transcript = useRef<HTMLElement>(null);
@@ -135,11 +137,16 @@ export function TransmissionDesk({
     say(tour[next]);
   }, [say, sound, tourStep]);
 
-  // A visitor's first time on the desk: he gives the tour, once, unless
-  // they arrived with a question already in hand (?ask=…).
+  // On arrival: a question carried in the URL (?ask=…) goes straight out;
+  // otherwise a visitor's first time on the desk gets the tour, once. Read
+  // here rather than on the server, so the desk can be a static page.
   useEffect(() => {
-    if (initialAsk || window.localStorage.getItem(touredKey)) return;
-    const timer = window.setTimeout(startTour, 700);
+    const asked = new URLSearchParams(window.location.search).get("ask")?.trim().slice(0, 200);
+    const timer = asked
+      ? window.setTimeout(() => ask(asked, true), 250)
+      : window.localStorage.getItem(touredKey)
+        ? 0
+        : window.setTimeout(startTour, 700);
     return () => window.clearTimeout(timer);
     // On arrival only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,17 +166,6 @@ export function TransmissionDesk({
     skip();
     input.current?.focus();
   }, [skip]);
-
-  // A question carried in the URL (?ask=…) goes out once the greeting is done.
-  useEffect(() => {
-    if (busy || !pendingAsk.current) return;
-    const timer = window.setTimeout(() => {
-      const queued = pendingAsk.current;
-      pendingAsk.current = null;
-      if (queued) ask(queued, true);
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [ask, busy]);
 
   const focusLatestInstrument = useCallback(() => {
     const instruments = transcript.current?.querySelectorAll<HTMLElement>("[data-instrument]");
@@ -459,14 +455,14 @@ export function TransmissionDesk({
 
           {/* Mr. P, adrift: plays around the stage until he's needed, then flies
               back here. Follows the pointer, reacts to the conversation. */}
-          <div ref={flier} className="relative will-change-transform">
+          <div ref={flier} className="relative h-64 w-60 will-change-transform sm:h-80 sm:w-80">
             <MrP3D
               state={conversation.mascotState(draft)}
               emotion={conversation.emotion}
               label={open ? "Mr. P. Close his speech bubble." : "Mr. P. Click to hear what he has to say."}
               expanded={open}
               onActivate={poke}
-              className="block h-64 w-60 sm:h-80 sm:w-80"
+              className="block size-full"
             />
           </div>
         </div>

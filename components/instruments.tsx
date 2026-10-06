@@ -3,8 +3,10 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Leader } from "@/components/leader";
 import { NotesScope } from "@/components/notes-scope";
+import { useSound } from "@/components/sound-control";
 import { StarCatcher } from "@/components/star-catcher";
 import { siteConfig } from "@/lib/site";
 import { softKeys, type Archive, type Instrument } from "@/lib/transmission";
@@ -142,6 +144,56 @@ function Transmitter() {
   );
 }
 
+/**
+ * The channel guide: Mr. P's way around the station, since the set has no
+ * header. Each channel tunes on click (or Alt+number), and the sound switch
+ * rides along.
+ */
+function ChannelGuide() {
+  const pathname = usePathname();
+  const { muted, toggleMuted } = useSound();
+
+  return (
+    <nav aria-label="Channels" className="type-osd flex flex-wrap items-center gap-1.5">
+      {siteConfig.navigation.map((item) => {
+        const active =
+          item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            aria-keyshortcuts={`Alt+${item.shortcut}`}
+            className={cn(
+              "flex items-center gap-1.5 border border-rule px-2 py-1 text-sm leading-4 outline-none hover:border-osd focus-visible:border-osd focus-visible:ring-2 focus-visible:ring-osd/30",
+              active && "border-osd bg-osd text-osd-foreground [text-shadow:none]",
+            )}
+          >
+            <span aria-hidden="true" className="opacity-70">
+              0{item.shortcut}
+            </span>
+            {item.label}
+          </Link>
+        );
+      })}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={!muted}
+        aria-keyshortcuts="Alt+M"
+        onClick={toggleMuted}
+        className="ml-auto flex items-center gap-2 px-2 py-1 text-sm leading-4 text-muted-foreground outline-none hover:text-foreground focus-visible:text-foreground"
+      >
+        <span
+          aria-hidden="true"
+          className={cn("h-2.5 w-3.5", muted ? "border-[1.5px] border-current" : "bg-signal shadow-[0_0_8px_var(--signal)]")}
+        />
+        Snd {muted ? "off" : "on"}
+      </button>
+    </nav>
+  );
+}
+
 /** Things to say back, like an NPC's dialogue choices. */
 function CommandIndex({ onAsk }: { onAsk: (question: string) => void }) {
   return (
@@ -163,6 +215,9 @@ function CommandIndex({ onAsk }: { onAsk: (question: string) => void }) {
         ))}
       </ul>
       <p className="type-label mt-3 text-muted-foreground">…or say anything below</p>
+      <div className="mt-4 border-t border-rule pt-4">
+        <ChannelGuide />
+      </div>
     </nav>
   );
 }
@@ -206,5 +261,7 @@ export function InstrumentMount({
       return <Transmitter />;
     case "commands":
       return <CommandIndex onAsk={onAsk} />;
+    case "channels":
+      return <ChannelGuide />;
   }
 }

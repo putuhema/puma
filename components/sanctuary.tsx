@@ -182,7 +182,7 @@ export function Sanctuary() {
         )}
       </ol>
 
-      <form onSubmit={submit} className="mt-4 flex flex-col gap-2 sm:pr-36">
+      <form onSubmit={submit} className="mt-4 flex flex-col gap-2 pr-24 sm:pr-36">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="opacity-80">Speaking as</span>
           {naming ? (
@@ -201,7 +201,10 @@ export function Sanctuary() {
                   event.preventDefault();
                   event.currentTarget.blur();
                 }
-                if (event.key === "Escape") setNaming(false);
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setNaming(false);
+                }
               }}
               className="w-40 border border-osd-foreground bg-transparent px-1.5 py-0.5 outline-none focus-visible:bg-osd-foreground/10"
             />

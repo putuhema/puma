@@ -14,7 +14,7 @@ export function MdxArticle({ children, entry }: { children: ReactNode; entry: Co
 
   return (
     <div className="flex flex-1 flex-col px-2 pb-16 sm:px-6 lg:px-10">
-      <div className="sticky top-[calc(env(safe-area-inset-top)+3.5rem)] z-10 bg-background pt-3 lg:pt-5">
+      <div className="sticky top-0 z-10 bg-background pt-[calc(env(safe-area-inset-top)+0.75rem)] lg:pt-[calc(env(safe-area-inset-top)+1.25rem)]">
         <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground">
           <Link href={`/${entry.section}`} className="outline-none hover:text-foreground focus-visible:text-foreground">
             ◂ Back to {section.title}{" "}

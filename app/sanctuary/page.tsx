@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 /** Channel 03: the Sanctuary, a live room on blue VHS glass. */
 export default function SanctuaryPage() {
   return (
-    <TubeScreen channel="03" label="Sanctuary" glass="blue">
+    <TubeScreen channel="03" label="Sanctuary" glass="blue" fit>
       <ConvexClientProvider
         offline={
           <div className="type-osd flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">

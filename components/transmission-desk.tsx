@@ -7,6 +7,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AsciiSpace } from "@/components/ascii-space";
@@ -19,7 +20,16 @@ import { useStation } from "@/components/station-context";
 import { useConversation } from "@/hooks/use-conversation";
 import { useWander } from "@/hooks/use-wander";
 import { bootGreeting } from "@/lib/station-replies";
-import type { Archive } from "@/lib/transmission";
+import { softKeys, type Archive } from "@/lib/transmission";
+
+/** The menu that rings Mr. P: the soft keys, plus a way to the other channels. */
+const ringOptions = [
+  ...softKeys.filter((softKey) => softKey.instrument !== "commands"),
+  { key: "6", label: "Channels", ask: "Show me the channels." },
+];
+
+/** Where each option sits around him, in degrees (0 is his right, 90 below). */
+const ringAngles = [-150, 180, 150, 30, 0, -30];
 
 function isTypingTarget(target: EventTarget | null) {
   return (
@@ -31,8 +41,9 @@ function isTypingTarget(target: EventTarget | null) {
 /**
  * The portfolio itself: Mr. P floating in ASCII space, waiting to be talked
  * to like an NPC. His speech bubble only pops up over his head once the
- * visitor speaks (or clicks the "!" above him), and only ever holds his
- * current line; the visitor's last words sit by the input. Replies stream in
+ * visitor speaks (or clicks him), and only ever holds his current line;
+ * clicking the empty space around him calls him home with a ring of menu
+ * options; the visitor's last words sit by the input. Replies stream in
  * from the model (or the local phrasebook when the antenna is offline) and
  * can mount instruments. Built to be driven from the keyboard: type
  * anywhere, ↑ to recall, Alt+↑ into the latest instrument, Esc to close the
@@ -60,6 +71,8 @@ export function TransmissionDesk({
   const greeted = useRef(false);
   const [draft, setDraft] = useState("");
   const [keymapOpen, setKeymapOpen] = useState(false);
+  /** Whether the ring of options is out around him. */
+  const [menuOpen, setMenuOpen] = useState(false);
   const pendingAsk = useRef(initialAsk ?? null);
   const recallIndex = useRef(-1);
   const input = useRef<HTMLInputElement>(null);
@@ -83,6 +96,7 @@ export function TransmissionDesk({
       if (!question.trim() || busy) return;
       recallIndex.current = -1;
       greeted.current = true;
+      setMenuOpen(false);
       setOpen(true);
       void send(question, viaSoftKey);
     },
@@ -99,6 +113,20 @@ export function TransmissionDesk({
     }
     input.current?.focus();
   }, [replayCurrent, sound]);
+
+  /** Clicking him: his bubble pops up, or goes away. */
+  const poke = useCallback(() => {
+    if (!open) return talk();
+    setOpen(false);
+    skip();
+  }, [open, skip, talk]);
+
+  /** Clicking the empty space: the menu rings him, or folds away. */
+  function toggleMenu(event: ReactMouseEvent<HTMLDivElement>) {
+    if ((event.target as HTMLElement).closest("button, a, input, textarea, [data-instrument], section")) return;
+    sound.key();
+    setMenuOpen((menu) => !menu);
+  }
 
   const close = useCallback(() => {
     setOpen(false);
@@ -138,6 +166,9 @@ export function TransmissionDesk({
         if (keymapOpen) {
           setKeymapOpen(false);
           event.preventDefault();
+        } else if (menuOpen) {
+          setMenuOpen(false);
+          event.preventDefault();
         } else if (printingId) {
           skip();
           event.preventDefault();
@@ -176,7 +207,7 @@ export function TransmissionDesk({
 
     window.addEventListener("keydown", operateDesk);
     return () => window.removeEventListener("keydown", operateDesk);
-  }, [close, draft, focusLatestInstrument, keymapOpen, open, printingId, receiving, skip]);
+  }, [close, draft, focusLatestInstrument, keymapOpen, menuOpen, open, printingId, receiving, skip]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -207,7 +238,7 @@ export function TransmissionDesk({
   // Left alone, he plays around the stage; talk to him (or start typing) and
   // he flies back to answer.
   useWander(flier, {
-    roaming: !open && !busy && !draft.trim(),
+    roaming: !open && !menuOpen && !busy && !draft.trim(),
     area: () => {
       const bounds = stage.current!.getBoundingClientRect();
       return { left: bounds.left + 8, top: bounds.top + 8, right: bounds.right - 8, bottom: bounds.bottom - 4 };
@@ -217,12 +248,12 @@ export function TransmissionDesk({
   });
 
   return (
-    <div className="relative flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col">
+    <div className="relative flex min-h-dvh flex-1 flex-col">
       <AsciiSpace className="absolute inset-0 size-full" />
       <h1 className="sr-only">Talk to Mr. P</h1>
 
       {/* Deep space: Mr. P floats low and centre, the bubble pops up over him. */}
-      <div ref={stage} className="relative flex flex-1 flex-col items-center justify-end px-3 pt-6 pb-2 sm:px-6">
+      <div ref={stage} onClick={toggleMenu} className="relative flex flex-1 flex-col items-center justify-end px-3 pt-6 pb-2 sm:px-6">
         <div className="relative">
           <AnimatePresence>
             {open && home && (
@@ -318,29 +349,43 @@ export function TransmissionDesk({
               back here. Follows the pointer, reacts to the conversation. */}
           <div ref={flier} className="relative will-change-transform">
             <AnimatePresence>
-              {!open && (
-                /* Like an NPC with something to say: a "!" bobbing over his head. */
-                  <motion.button
-                    key="talk"
-                    type="button"
-                    onClick={talk}
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.1 } }}
-                    className="group absolute bottom-[calc(100%-1rem)] left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 outline-none"
-                  >
-                    <span className="flex size-10 animate-bounce items-center justify-center border-2 border-foreground bg-signal font-tube text-3xl leading-none text-background shadow-[3px_3px_0_var(--osd)] group-hover:bg-foreground group-focus-visible:bg-foreground">
-                      !
-                    </span>
-                    <span className="type-label bg-background/80 px-1.5 py-0.5 text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground">
-                      Talk
-                    </span>
-                  </motion.button>
+              {menuOpen && home && (
+                /* The menu rings him, popping out from his middle. */
+                <motion.nav
+                  key="ring"
+                  aria-label="Things to say"
+                  className="pointer-events-none absolute inset-0 z-20 [--ring:9rem] sm:[--ring:13rem]"
+                >
+                  {ringOptions.map((option, index) => {
+                    const angle = (ringAngles[index] * Math.PI) / 180;
+                    return (
+                      <motion.button
+                        key={option.key}
+                        type="button"
+                        onClick={() => ask(option.ask, true)}
+                        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.4, transition: { duration: 0.12 } }}
+                        transition={{ type: "spring", duration: 0.35, bounce: 0.35, delay: reduceMotion ? 0 : index * 0.03 }}
+                        style={{
+                          left: `calc(50% + ${Math.cos(angle).toFixed(3)} * var(--ring))`,
+                          top: `calc(50% + ${Math.sin(angle).toFixed(3)} * var(--ring) * 0.8)`,
+                        }}
+                        className="type-osd pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 border-2 border-foreground bg-surface px-2.5 py-1 text-sm whitespace-nowrap shadow-[3px_3px_0_var(--osd)] outline-none hover:bg-osd hover:text-osd-foreground focus-visible:bg-osd focus-visible:text-osd-foreground sm:text-base"
+                      >
+                        {option.label}
+                      </motion.button>
+                    );
+                  })}
+                </motion.nav>
               )}
             </AnimatePresence>
             <MrP3D
               state={conversation.mascotState(draft)}
               emotion={conversation.emotion}
+              label={open ? "Mr. P. Close his speech bubble." : "Mr. P. Click to hear what he has to say."}
+              expanded={open}
+              onActivate={poke}
               className="block h-64 w-60 sm:h-80 sm:w-80"
             />
           </div>

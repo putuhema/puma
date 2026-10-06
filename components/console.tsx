@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCrtBulge } from "@/components/crt-bulge";
 import { CrtOverlay } from "@/components/crt-overlay";
@@ -10,7 +9,6 @@ import { useSfx, useSound } from "@/components/sound-control";
 import { useStation } from "@/components/station-context";
 import { siteConfig } from "@/lib/site";
 import type { Archive } from "@/lib/transmission";
-import { cn } from "@/lib/utils";
 
 function isTypingTarget(target: EventTarget | null) {
   return (
@@ -19,35 +17,12 @@ function isTypingTarget(target: EventTarget | null) {
   );
 }
 
-function SoundSwitch() {
-  const { muted, toggleMuted } = useSound();
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={!muted}
-      aria-label="Sound"
-      onClick={toggleMuted}
-      className="flex shrink-0 items-center gap-2 text-[0.8125rem] font-medium uppercase outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-osd"
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "h-2.5 w-3.5",
-          muted ? "border-[1.5px] border-foreground" : "bg-signal shadow-[0_0_8px_var(--signal)]",
-        )}
-      />
-      <span className="hidden sm:inline">Snd {muted ? "off" : "on"}</span>
-    </button>
-  );
-}
-
 /**
  * The whole site is a tape playing on a CRT: the transmission desk (or an
- * article) under a slim strip carrying the nameplate, the station readout,
- * and sound. The tube face bulges toward the viewer, so the screen itself
- * scrolls; changing page tears the picture like a bad edit on tape.
+ * article) edge to edge, no header. Mr. P is the way around: ask him to go
+ * somewhere, or use his channel guide. The tube face bulges toward the
+ * viewer, so the screen itself scrolls; changing page tears the picture like
+ * a bad edit on tape.
  */
 export function Console({ archive, children }: { archive: Archive; children: ReactNode }) {
   const pathname = usePathname();
@@ -85,18 +60,25 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
     return () => window.removeEventListener("keydown", operateSet);
   }, [toggleMuted]);
 
-  // Channels: Alt+1–3 from anywhere. Off the chat, where nothing is being
-  // typed, the bare number keys tune too, Esc steps back out, and j/k scroll.
+  // Channels: Alt+1–3 from anywhere, even mid-sentence. Off the chat, where
+  // nothing is being typed, the bare number keys tune too, Esc steps back
+  // out, and j/k scroll. Esc in a text box hands the keys back first.
   useEffect(() => {
     function tune(event: KeyboardEvent) {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey) return;
       const number = event.code.startsWith("Digit") ? event.code.slice(5) : null;
       const channel = siteConfig.navigation.find((item) => item.shortcut === number);
-      const offChat = pathname !== "/" && !isTypingTarget(event.target);
+      const typing = isTypingTarget(event.target);
+      const offChat = pathname !== "/" && !typing;
 
       if (channel && (event.altKey || (offChat && !event.shiftKey))) {
         event.preventDefault();
         if (channel.href !== pathname) router.push(channel.href);
+        return;
+      }
+      if (typing && pathname !== "/" && event.key === "Escape" && !event.altKey) {
+        event.preventDefault();
+        screen.current?.focus({ preventScroll: true });
         return;
       }
       if (!offChat || event.altKey) return;
@@ -142,42 +124,6 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
         className="size-full overflow-y-auto overscroll-contain outline-none [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]"
       >
         <div className="flex min-h-full flex-col">
-          <header className="sticky top-0 z-40 border-b border-rule bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
-            <div className="mx-auto flex h-14 w-full max-w-4xl items-center gap-3 px-3 sm:gap-5 sm:px-6 lg:px-0">
-              <Link
-                href="/"
-                className="flex items-baseline gap-2 whitespace-nowrap outline-none focus-visible:text-osd"
-              >
-                <span className="font-osd text-2xl leading-none tracking-[0.02em] uppercase">
-                  {siteConfig.author}
-                </span>
-              </Link>
-              <nav aria-label="Channels" className="flex flex-1 items-center justify-center gap-1 sm:gap-1.5">
-                {siteConfig.navigation.map((item) => {
-                  const active =
-                    item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      aria-keyshortcuts={`Alt+${item.shortcut}`}
-                      className={cn(
-                        "type-osd flex items-center gap-1.5 px-2 py-1 text-xs leading-4 text-muted-foreground outline-none hover:text-foreground focus-visible:text-foreground sm:text-sm",
-                        active && "bg-osd text-osd-foreground [text-shadow:none] hover:text-osd-foreground",
-                      )}
-                    >
-                      <span aria-hidden="true" className="opacity-70">
-                        {item.shortcut}
-                      </span>
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-              <SoundSwitch />
-            </div>
-          </header>
           <div key={pathname} className="animate-tear flex min-w-0 flex-1 flex-col">
             {children}
           </div>

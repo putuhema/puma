@@ -16,17 +16,30 @@ export function TubeScreen({
   channel,
   label,
   glass,
+  fit = false,
   className,
   children,
 }: {
   channel: string;
   label: string;
   glass: keyof typeof glassStyles;
+  /**
+   * Exactly one screen tall at every size, never growing with what's on it,
+   * so long content scrolls inside the tube (a chat log, say).
+   */
+  fit?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-[36rem] flex-1 flex-col p-3 pt-8 sm:p-5 sm:pt-12 lg:h-[calc(100dvh-3.5rem)] lg:min-h-0">
+    <div
+      className={cn(
+        "flex flex-col p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:p-5 sm:pt-[calc(env(safe-area-inset-top)+1.25rem)]",
+        fit
+          ? "h-dvh min-h-[28rem] flex-none"
+          : "min-h-[36rem] flex-1 lg:h-dvh lg:min-h-0",
+      )}
+    >
       <section
         aria-label={`Channel ${channel}: ${label}`}
         className={cn("tube animate-tube-on flex min-h-0 flex-1 flex-col", glassStyles[glass], className)}

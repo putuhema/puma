@@ -20,7 +20,8 @@ const groups: { title: string; keys: [string, string][] }[] = [
     keys: [
       ...siteConfig.navigation.map((item): [string, string] => [`Alt ${item.shortcut}`, item.label]),
       ["1 2 3", "Same, off the chat"],
-      ["Esc", "Step back out"],
+      ["go …", "Or just ask Mr. P: \u201ctake me to the notes\u201d"],
+      ["Esc", "Leave a text box, then step back out"],
       ["j k g G", "Scroll, top, bottom"],
     ],
   },
@@ -38,7 +39,8 @@ const groups: { title: string; keys: [string, string][] }[] = [
     keys: [
       ["Alt M", "Sound on or off"],
       ["Alt B", "Full lens: bend the picture too"],
-      ["Click", "Poke Mr. P"],
+      ["Click", "Mr. P: hear what he has to say"],
+      ["Click", "Empty space: his menu, all around him"],
     ],
   },
 ];

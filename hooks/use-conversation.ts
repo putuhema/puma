@@ -2,13 +2,16 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
+import { usePathname, useRouter } from "next/navigation";
 import type { MrPState } from "@/components/mr-p-3d";
 import { useSfx } from "@/components/sound-control";
-import { localReply, unclearReply, type Reply } from "@/lib/station-replies";
+import { destination, localReply, tuningReply, unclearReply, type Reply } from "@/lib/station-replies";
 import type { Archive, ChatEvent, ChatRequest, Instrument, Transmission } from "@/lib/transmission";
 
 /** A pause before canned replies, so the line still feels like it travels. */
 const localDelayMs = 420;
+/** Long enough to read "tuning to…" before the channel changes. */
+const tuningDelayMs = 1200;
 
 function stamp() {
   return new Intl.DateTimeFormat("en-GB", {
@@ -55,6 +58,8 @@ async function* readEvents(body: ReadableStream<Uint8Array>) {
 export function useConversation({ archive, greeting }: { archive: Archive; greeting: Reply }) {
   const reduceMotion = useReducedMotion();
   const sound = useSfx();
+  const router = useRouter();
+  const pathname = usePathname();
   const [log, setLog] = useState<Transmission[]>(() => [
     { ...makeTransmission("station", greeting.text, greeting.instruments), emotion: greeting.emotion },
   ]);
@@ -117,6 +122,18 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
       const history = [...log, visitor];
       setLog(history);
       setReceiving(true);
+
+      // "Take me to the notes": he answers, then tunes the set himself.
+      const channel = destination(text);
+      if (channel) {
+        const here = channel.href === pathname;
+        const reply = tuningReply(channel, here);
+        window.setTimeout(() => {
+          startReply({ ...makeTransmission("station", reply.text), emotion: reply.emotion });
+          if (!here) window.setTimeout(() => router.push(channel.href), tuningDelayMs);
+        }, localDelayMs);
+        return;
+      }
 
       if (viaSoftKey || antennaOffline.current) {
         window.setTimeout(() => deliverLocal(text), localDelayMs);
@@ -188,7 +205,7 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
         deliverLocal(text);
       }
     },
-    [busy, deliverLocal, log, reduceMotion, sound, startReply],
+    [busy, deliverLocal, log, pathname, reduceMotion, router, sound, startReply],
   );
 
   const finishPrinting = useCallback((transmission: Transmission) => {

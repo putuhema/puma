@@ -1,7 +1,7 @@
 import type { Emotion } from "@/lib/emotions";
 
 /** Instruments the station can mount into a reply. */
-export const instruments = ["dossier", "notes", "sanctuary", "game", "transmit", "commands"] as const;
+export const instruments = ["dossier", "notes", "sanctuary", "game", "transmit", "commands", "channels"] as const;
 export type Instrument = (typeof instruments)[number];
 
 export type Transmission = {

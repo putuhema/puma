@@ -6,6 +6,14 @@ export type Reply = { text: string; instruments: Instrument[]; emotion: Emotion 
 
 const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
+    pattern: /\b(channels?|navigat\w*|pages?|sections?|where (can|should) i go|look around|site ?map)\b/,
+    reply: () => ({
+      text: "Here's the channel guide, earthling! Pick one and I'll tune the set for you. Or just tell me where to go.",
+      instruments: ["channels"],
+      emotion: "happy",
+    }),
+  },
+  {
     pattern: /^(help|\?|commands?|menu)\b/,
     reply: () => ({
       text: "Well, here's the whole menu, folks! Type any question in plain words, press a soft key, or pick a branch below.",
@@ -81,6 +89,41 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   },
 ];
 
+/** Words that name each channel, keyed by its href. */
+const channelWords: Record<string, RegExp> = {
+  "/": /\b(home|chat|desk|start|main|channel 0?1|ch ?0?1)\b/,
+  "/notes": /\b(notes?|writing|channel 0?2|ch ?0?2)\b/,
+  "/sanctuary": /\b(sanctuary|room|channel 0?3|ch ?0?3)\b/,
+};
+
+/**
+ * "Take me to the notes", "go home", "channel 3": where the visitor wants
+ * Mr. P to tune the set, or null when they're not asking to go anywhere.
+ */
+export function destination(question: string) {
+  const normalized = question.trim().toLowerCase();
+  const going =
+    /^(please |can you |could you |let'?s )*(go|take me|bring me|tune|switch|jump|head|navigate|open|back)\b/.test(
+      normalized,
+    ) || /^(ch(annel)? ?0?[1-3])$/.test(normalized);
+  if (!going) return null;
+  return siteConfig.navigation.find((item) => channelWords[item.href]?.test(normalized)) ?? null;
+}
+
+export function tuningReply(channel: (typeof siteConfig.navigation)[number], here: boolean): Reply {
+  return here
+    ? {
+        text: `We're already on channel 0${channel.shortcut}, ${channel.label}! Look around, earthling.`,
+        instruments: [],
+        emotion: "laugh",
+      }
+    : {
+        text: `Roger that! Tuning to channel 0${channel.shortcut}, ${channel.label}. Hold onto your antennae!`,
+        instruments: [],
+        emotion: "excited",
+      };
+}
+
 /** The station's own phrasebook. Returns null when nothing matches. */
 export function localReply(question: string, archive: Archive): Reply | null {
   const normalized = question.trim().toLowerCase();
@@ -104,7 +147,7 @@ export const bootGreeting: Reply = {
 
 /** His hello when poked off the chat, where he floats in the corner. */
 export const pocketGreeting: Reply = {
-  text: "Hiya, earthling! Need a hand? Ask me anything about the operator, the notes, or the Sanctuary.",
-  instruments: [],
+  text: "Hiya, earthling! Need a hand? Pick a channel and I'll tune the set, or ask me anything about the operator.",
+  instruments: ["channels"],
   emotion: "happy",
 };

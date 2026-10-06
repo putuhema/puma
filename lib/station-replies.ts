@@ -8,7 +8,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\b(channels?|navigat\w*|pages?|sections?|where (can|should) i go|look around|site ?map)\b/,
     reply: () => ({
-      text: "Here's the channel guide, earthling! Pick one and I'll tune the set for you. Or just tell me where to go.",
+      text: "The channel guide. Three channels, which is two more than I needed to learn. Pick one and I'll do the tuning.",
       instruments: ["channels"],
       emotion: "happy",
     }),
@@ -16,7 +16,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /^(help|\?|commands?|menu)\b/,
     reply: () => ({
-      text: "Well, here's the whole menu, folks! Type any question in plain words, press a soft key, or pick a branch below.",
+      text: "Here's the menu. Pick a branch, or type a question in plain words. I'm a very advanced alien; full sentences are fine.",
       instruments: ["commands"],
       emotion: "happy",
     }),
@@ -24,7 +24,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\b(who|about|puma|operator|yourself|bio)\b/,
     reply: () => ({
-      text: `Ah, the boss! Here's the file on ${siteConfig.author}: ${siteConfig.description.toLowerCase()} They're away from the desk, so yours truly keeps the station humming.`,
+      text: `The file on ${siteConfig.author}: ${siteConfig.description.toLowerCase()} Currently away from the desk, which is how I got this job. I didn't apply.`,
       instruments: ["dossier"],
       emotion: "love",
     }),
@@ -33,8 +33,8 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
     pattern: /\b(notes?|writing|thoughts?)\b/,
     reply: ({ notes }) => ({
       text: notes.length
-        ? `Ooh, ${notes.length} note${notes.length === 1 ? "" : "s"} on the tracking scope! Pick a contact and I'll roll the tape.`
-        : "Tracking scope's clear as a summer sky! No notes filed yet. The operator's still scribbling away.",
+        ? `${notes.length} note${notes.length === 1 ? "" : "s"} on the tracking scope. Pick a contact and I'll roll the tape. I've read them all; no spoilers.`
+        : "Tracking scope's empty. No notes filed yet. The operator is \"thinking about it,\" which is a phase I'm told can last years.",
       instruments: ["notes"],
       emotion: notes.length ? "excited" : "sad",
     }),
@@ -42,7 +42,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\b(sanctuary|people|others|someone|community|lonely|room|talk to (other|real))\b/,
     reply: () => ({
-      text: "Ooh, the Sanctuary! Channel 03 is a cozy little room where visitors chat with each other live. Pick a name and say hiya, earthling!",
+      text: "Channel 03, the Sanctuary. Real humans, talking live, to each other. Revolutionary. Pick a name and say hello; I'll pretend not to listen.",
       instruments: ["sanctuary"],
       emotion: "love",
     }),
@@ -50,7 +50,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\bscored (\d+)/,
     reply: () => ({
-      text: "Woweee, look at that score! You fly that saucer better than I do, and I was born in one. Wanna go again, or ask me something?",
+      text: "Not bad. You fly that saucer better than I do, and I was born in one. I'll be updating my résumé. Again?",
       instruments: [],
       emotion: "excited",
     }),
@@ -58,7 +58,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\b(game|play|bored|fun|stars?)\b/,
     reply: () => ({
-      text: "Ooh, Star Catcher! Fly my saucer, catch the falling stars, and dodge those pesky rocks. Catch five in a row for a multiplier!",
+      text: "Star Catcher. Fly my saucer, catch the stars, dodge the rocks. Five in a row gets a multiplier. Please return the saucer in one piece.",
       instruments: ["game"],
       emotion: "excited",
     }),
@@ -66,7 +66,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\b(contact|email|mail|hire|reach|touch|transmit|work together)\b/,
     reply: () => ({
-      text: "Swell! Warming up the transmitter. Write your message and it flies straight to the operator's inbox.",
+      text: "Transmitter's warm. Write your message and it goes straight to the operator's inbox. Faster than a carrier pigeon, slightly less dignified.",
       instruments: ["transmit"],
       emotion: "happy",
     }),
@@ -74,7 +74,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /^(hi|hello|hey|yo|good (morning|evening|afternoon))\b/,
     reply: () => ({
-      text: "Well, hiya there! Mr. P at your service. Ask me anything about the operator, or start with the menu.",
+      text: "Hello. Mr. P, interstellar host and part-time website. Ask me about the operator, or start with the menu.",
       instruments: ["commands"],
       emotion: "wink",
     }),
@@ -82,7 +82,7 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
     pattern: /\b(sudo|self.?destruct|launch|nuke)\b/,
     reply: () => ({
-      text: "Ha! Nice try, pal. This station runs on curiosity, not authority.",
+      text: "Bold. Unfortunately this station runs on curiosity, not authority. Also I don't have the keys.",
       instruments: [],
       emotion: "laugh",
     }),
@@ -113,12 +113,12 @@ export function destination(question: string) {
 export function tuningReply(channel: (typeof siteConfig.navigation)[number], here: boolean): Reply {
   return here
     ? {
-        text: `We're already on channel 0${channel.shortcut}, ${channel.label}! Look around, earthling.`,
+        text: `We're already on channel 0${channel.shortcut}, ${channel.label}. Mission accomplished, I suppose.`,
         instruments: [],
         emotion: "laugh",
       }
     : {
-        text: `Roger that! Tuning to channel 0${channel.shortcut}, ${channel.label}. Hold onto your antennae!`,
+        text: `Tuning to channel 0${channel.shortcut}, ${channel.label}. Crossed the galaxy for this, and honestly, worth it.`,
         instruments: [],
         emotion: "excited",
       };
@@ -133,21 +133,33 @@ export function localReply(question: string, archive: Archive): Reply | null {
 
 export function unclearReply(): Reply {
   return {
-    text: "Gee, my antennae aren't picking that one up, and the big antenna back home is offline today. Try one of these instead!",
+    text: "My antennae got nothing, and the big antenna back home is offline. Two antennae, zero answers. Try one of these.",
     instruments: ["commands"],
     emotion: "confused",
   };
 }
 
 export const bootGreeting: Reply = {
-  text: `Well, hiya there, earthling! I'm Mr. P, ${siteConfig.author}'s host around here. ${siteConfig.author} stepped away from the desk, so you've got me! Just type a question: the operator, the notes, the Sanctuary, anything!`,
+  text: `Hello, earthling. I'm Mr. P, ${siteConfig.author}'s host. ${siteConfig.author} stepped away from the desk, so you get me: smaller, greener-ish, and always available. Ask about the operator, the notes, the Sanctuary, anything.`,
   instruments: ["commands"],
   emotion: "excited",
 };
 
+/** What the line says while it waits, one per turn, so it never gets stale. */
+export const linePrompts = [
+  "Say hi to Mr. P… (? for keys)",
+  "Ask him anything. He has antennae for this.",
+  "Go on, he's all ears. Well, antennae.",
+  "Ask about the operator, the notes, or space snacks",
+  "Type here. He reads fast for an alien.",
+];
+
+/** What the line says while he's still mid-sentence. */
+export const busyPrompts = ["Mr. P is talking…", "Hang on, he's on a roll…", "Let him finish, he's proud of this one…"];
+
 /** His hello when poked off the chat, where he floats in the corner. */
 export const pocketGreeting: Reply = {
-  text: "Hiya, earthling! Need a hand? Pick a channel and I'll tune the set, or ask me anything about the operator.",
+  text: "Lost? Happens to the best of us. I once took a wrong turn at Jupiter. Pick a channel, or ask me about the operator.",
   instruments: ["channels"],
   emotion: "happy",
 };

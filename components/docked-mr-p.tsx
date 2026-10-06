@@ -7,7 +7,7 @@ import { MrP3D } from "@/components/mr-p-3d";
 import { PrintedText, ThinkingDots } from "@/components/speech";
 import { useSfx } from "@/components/sound-control";
 import { useConversation } from "@/hooks/use-conversation";
-import { pocketGreeting } from "@/lib/station-replies";
+import { busyPrompts, linePrompts, pocketGreeting } from "@/lib/station-replies";
 import type { Archive } from "@/lib/transmission";
 
 /**
@@ -20,7 +20,7 @@ export function DockedMrP({ archive }: { archive: Archive }) {
   const reduceMotion = useReducedMotion();
   const sound = useSfx();
   const conversation = useConversation({ archive, greeting: pocketGreeting });
-  const { current, lastWords, receiving, busy, printingId, isPrinting, lineDone, instruments } = conversation;
+  const { current, lastWords, sentLines, receiving, busy, printingId, isPrinting, lineDone, instruments } = conversation;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const greeted = useRef(false);
@@ -141,7 +141,11 @@ export function DockedMrP({ archive }: { archive: Archive }) {
                     maxLength={500}
                     autoComplete="off"
                     autoFocus
-                    placeholder={busy ? "Mr. P is talking…" : "Ask Mr. P anything…"}
+                    placeholder={
+                      busy
+                        ? busyPrompts[sentLines.length % busyPrompts.length]
+                        : linePrompts[(sentLines.length % (linePrompts.length - 1)) + 1]
+                    }
                     className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                   />
                   <span aria-hidden="true" className="type-label shrink-0 text-muted-foreground">

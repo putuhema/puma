@@ -194,30 +194,32 @@ function ChannelGuide() {
   );
 }
 
-/** Things to say back, like an NPC's dialogue choices. */
+/**
+ * Things to say back, like an NPC's dialogue choices: one short row, so
+ * his line stays the star of the bubble.
+ */
 function CommandIndex({ onAsk }: { onAsk: (question: string) => void }) {
   return (
-    <nav aria-label="Things to say" className="border-t border-rule pt-4">
-      <ul className="flex flex-col gap-1">
-        {softKeys.map((softKey) => (
-          <li key={softKey.key}>
-            <button
-              type="button"
-              onClick={() => onAsk(softKey.ask)}
-              className="group flex w-full items-baseline gap-2 px-1 py-0.5 text-left font-tube text-xl leading-7 outline-none hover:bg-osd hover:text-osd-foreground focus-visible:bg-osd focus-visible:text-osd-foreground"
-            >
-              <span aria-hidden="true" className="invisible text-signal group-hover:visible group-focus-visible:visible">
-                ▶
-              </span>
-              {softKey.ask}
-            </button>
-          </li>
-        ))}
+    <nav aria-label="Things to say">
+      <ul className="flex flex-wrap gap-1.5">
+        {softKeys
+          .filter((softKey) => softKey.instrument !== "commands")
+          .map((softKey) => (
+            <li key={softKey.key}>
+              <button
+                type="button"
+                title={softKey.ask}
+                onClick={() => onAsk(softKey.ask)}
+                className="type-osd flex items-center gap-1 border border-rule px-2 py-1 text-sm leading-4 text-muted-foreground outline-none hover:border-osd hover:bg-osd hover:text-osd-foreground focus-visible:border-osd focus-visible:bg-osd focus-visible:text-osd-foreground"
+              >
+                <span aria-hidden="true" className="text-signal">
+                  ▸
+                </span>
+                {softKey.label}
+              </button>
+            </li>
+          ))}
       </ul>
-      <p className="type-label mt-3 text-muted-foreground">…or say anything below</p>
-      <div className="mt-4 border-t border-rule pt-4">
-        <ChannelGuide />
-      </div>
     </nav>
   );
 }

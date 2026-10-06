@@ -40,7 +40,6 @@ const groups: { title: string; keys: [string, string][] }[] = [
       ["Alt M", "Sound on or off"],
       ["Alt B", "Full lens: bend the picture too"],
       ["Click", "Mr. P: hear what he has to say"],
-      ["Click", "Empty space: his menu, all around him"],
     ],
   },
 ];

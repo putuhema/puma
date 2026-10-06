@@ -10,7 +10,8 @@ export const sectionDetails: Record<
 > = {
   notes: {
     title: "Notes",
-    description: "Small observations, useful fragments, and things worth remembering.",
+    description:
+      "Small observations, useful fragments, and things worth remembering.",
     index: "02",
   },
 };
@@ -21,6 +22,7 @@ export function isContentSection(value: string): value is ContentSection {
 
 export const siteConfig = {
   name: "puma",
+  fullname: "Putu Mahendra",
   author: "Puma",
   description: "A web developer who loves to build stuff.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",

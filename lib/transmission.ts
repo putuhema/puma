@@ -43,10 +43,10 @@ export type ChatEvent =
 
 /** The soft keys under the composer, with the phrase each one sends. */
 export const softKeys = [
-  { key: "1", label: "Who", ask: "Who is Puma?", instrument: "dossier" },
-  { key: "2", label: "Notes", ask: "Show me the notes.", instrument: "notes" },
-  { key: "3", label: "Sanctuary", ask: "Where can I talk to other people?", instrument: "sanctuary" },
-  { key: "4", label: "Play", ask: "Let's play a game!", instrument: "game" },
-  { key: "5", label: "Transmit", ask: "How do I get in touch?", instrument: "transmit" },
+  { key: "1", label: "Who", ask: "Who runs this place?", instrument: "dossier" },
+  { key: "2", label: "Notes", ask: "Got any notes worth reading?", instrument: "notes" },
+  { key: "3", label: "Sanctuary", ask: "Are there other people out here?", instrument: "sanctuary" },
+  { key: "4", label: "Play", ask: "I'm bored. Got a game?", instrument: "game" },
+  { key: "5", label: "Transmit", ask: "How do I get in touch? Carrier pigeon?", instrument: "transmit" },
   { key: "0", label: "Help", ask: "Help", instrument: "commands" },
 ] as const satisfies readonly { key: string; label: string; ask: string; instrument: Instrument }[];

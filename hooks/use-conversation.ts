@@ -110,7 +110,7 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
 
       if (/^(clear|cls|reset|rewind)$/i.test(text)) {
         const fresh: Transmission = {
-          ...makeTransmission("station", "Rewound and ready! Fresh tape, fresh start. What'll it be?", ["commands"]),
+          ...makeTransmission("station", "Tape rewound. I've forgotten everything, which is very relaxing. What now?", ["commands"]),
           emotion: "excited",
         };
         setLog([fresh]);
@@ -160,7 +160,7 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
           startReply({
             ...makeTransmission(
               "station",
-              `Whoa, slow down, space cadet! My antennae are all frazzled. Give me ${wait} second${wait === 1 ? "" : "s"} to cool off, then ask me again.`,
+              `Easy. My antennae need ${wait} second${wait === 1 ? "" : "s"} to cool down. Alien hardware, Earth budget.`,
             ),
             emotion: "dizzy",
           });

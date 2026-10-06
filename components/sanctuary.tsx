@@ -227,7 +227,7 @@ export function Sanctuary() {
             maxLength={maxBody}
             autoComplete="off"
             disabled={!seat}
-            placeholder="Say something to the room…"
+            placeholder="Say something nice to the room…"
             className="min-w-0 flex-1 bg-transparent font-tube text-xl normal-case outline-none placeholder:text-osd-foreground/60"
           />
           <span aria-hidden="true" className="text-xs opacity-70">

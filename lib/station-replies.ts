@@ -147,7 +147,7 @@ export const bootGreeting: Reply = {
 
 /** What the line says while it waits, one per turn, so it never gets stale. */
 export const linePrompts = [
-  "Say hi to Mr. P… (? for keys)",
+  "Say hi to Mr. P… (/ for commands, ? for keys)",
   "Ask him anything. He has antennae for this.",
   "Go on, he's all ears. Well, antennae.",
   "Ask about the operator, the notes, or space snacks",

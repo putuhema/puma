@@ -13,6 +13,7 @@ const groups: { title: string; keys: [string, string][] }[] = [
       ["↑ / ↓", "Recall earlier messages"],
       ["Esc", "Fast-forward a reply, close his bubble, or close this map"],
       ["clear", "Type it to rewind the tape"],
+      ["/go", "Go anywhere: Tab completes, ⏎ goes"],
     ],
   },
   {

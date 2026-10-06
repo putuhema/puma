@@ -13,6 +13,7 @@ import { AsciiSpace } from "@/components/ascii-space";
 import { InstrumentMount } from "@/components/instruments";
 import { KeyboardMap } from "@/components/keyboard-map";
 import { MrP3D } from "@/components/mr-p-3d";
+import { useSlashCommands } from "@/components/slash-commands";
 import { useSfx } from "@/components/sound-control";
 import { PrintedText, ThinkingDots } from "@/components/speech";
 import { useStation } from "@/components/station-context";
@@ -168,9 +169,11 @@ export function TransmissionDesk({
         return;
       }
 
+      // "/" from anywhere opens the line's skills.
       if (event.key === "/" && !typing) {
         event.preventDefault();
         input.current?.focus();
+        setDraft((line) => line || "/");
         return;
       }
 
@@ -184,14 +187,17 @@ export function TransmissionDesk({
     return () => window.removeEventListener("keydown", operateDesk);
   }, [close, draft, focusLatestInstrument, keymapOpen, open, printingId, receiving, skip]);
 
+  const slash = useSlashCommands({ draft, setDraft, archive });
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (slash.submit() || busy) return;
     ask(draft);
     setDraft("");
   }
 
   function operateLine(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (slash.onKeyDown(event)) return;
     // ↑ / ↓ recall earlier transmissions, like a shell.
     if ((event.key === "ArrowUp" || event.key === "ArrowDown") && sentLines.length > 0 && !event.altKey) {
       const recalling = recallIndex.current >= 0;
@@ -360,7 +366,8 @@ export function TransmissionDesk({
             </p>
           )}
 
-          <form onSubmit={submit} className="flex items-stretch gap-2">
+          <form onSubmit={submit} className="relative flex items-stretch gap-2">
+            {slash.menu}
             <label className="flex h-12 min-w-0 flex-1 items-center gap-2 border bg-surface px-3 focus-within:border-osd focus-within:ring-2 focus-within:ring-osd/30">
               <span aria-hidden="true" className="font-semibold text-osd">
                 ▸
@@ -374,6 +381,7 @@ export function TransmissionDesk({
                   recallIndex.current = -1;
                 }}
                 onKeyDown={operateLine}
+                {...slash.inputProps}
                 maxLength={500}
                 autoComplete="off"
                 autoFocus

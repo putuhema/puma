@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { InstrumentMount } from "@/components/instruments";
 import { MrP3D } from "@/components/mr-p-3d";
+import { useSlashCommands } from "@/components/slash-commands";
 import { PrintedText, ThinkingDots } from "@/components/speech";
 import { useSfx } from "@/components/sound-control";
 import { useConversation } from "@/hooks/use-conversation";
@@ -40,9 +41,11 @@ export function DockedMrP({ archive }: { archive: Archive }) {
     conversation.skip();
   }
 
+  const slash = useSlashCommands({ draft, setDraft, archive });
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !draft.trim()) return;
+    if (slash.submit() || busy || !draft.trim()) return;
     void conversation.ask(draft);
     setDraft("");
   }
@@ -50,7 +53,7 @@ export function DockedMrP({ archive }: { archive: Archive }) {
   // Esc skips his line, then closes the box. Handled here so the page
   // doesn't also treat it as "step back out".
   function operate(event: KeyboardEvent<HTMLElement>) {
-    if (event.key !== "Escape") return;
+    if (event.key !== "Escape" || event.defaultPrevented) return;
     event.preventDefault();
     if (printingId) conversation.skip();
     else close();
@@ -128,7 +131,8 @@ export function DockedMrP({ archive }: { archive: Archive }) {
                 </p>
               )}
 
-              <form onSubmit={submit}>
+              <form onSubmit={submit} className="relative">
+                {slash.menu}
                 <label className="flex h-10 items-center gap-2 border bg-background px-2.5 focus-within:border-osd focus-within:ring-2 focus-within:ring-osd/30">
                   <span aria-hidden="true" className="font-semibold text-osd">
                     ▸
@@ -138,6 +142,8 @@ export function DockedMrP({ archive }: { archive: Archive }) {
                     ref={input}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => slash.onKeyDown(event)}
+                    {...slash.inputProps}
                     maxLength={500}
                     autoComplete="off"
                     autoFocus

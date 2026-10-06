@@ -19,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
+    ...["/sanctuary", ...siteConfig.extras.map((item) => item.href)].map((pathname) => ({
+      url: absolute(pathname),
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
     ...entries.map((entry) => ({
       url: absolute(entry.href),
       lastModified: new Date(`${entry.updatedAt ?? entry.publishedAt}T00:00:00Z`),

@@ -8,6 +8,7 @@ import {
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
 import { getArchive } from "@/lib/content";
+import { preferencesScript } from "@/lib/preferences";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site";
 
@@ -60,6 +61,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // The on-screen keyboard shrinks the page, so the chat line rides above it.
+  interactiveWidget: "resizes-content",
   themeColor: "#0A0C0B",
 };
 
@@ -68,6 +71,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
+      // The preferences script sets data-effects and data-phosphor before React.
+      suppressHydrationWarning
       className={cn(
         "h-full scroll-smooth antialiased motion-reduce:scroll-auto",
         plexMono.variable,
@@ -76,6 +81,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         vt323.variable,
       )}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: preferencesScript }} />
+      </head>
       <body className="flex min-h-full flex-col [-webkit-tap-highlight-color:transparent]">
         <SiteShell archive={getArchive()}>{children}</SiteShell>
       </body>

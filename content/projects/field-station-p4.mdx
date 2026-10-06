@@ -1,0 +1,32 @@
+---
+title: "Field Station P-4"
+summary: "This website: a portfolio that plays like a VHS tape on an old CRT, hosted by Mr. P, a small alien who answers for the operator."
+publishedAt: "2026-09-24"
+updatedAt: "2026-10-06"
+tags: ["portfolio", "web", "realtime"]
+role: "Design and build"
+stack: ["Next.js 16", "React 19", "Convex", "Three.js", "Tailwind CSS 4", "MDX", "Web Audio"]
+draft: false
+---
+
+## The idea
+
+Most portfolios are a header, a grid of cards and a contact link. This one is a television. The whole site is a tape playing on a CRT, with a curved glass face, scanlines, static between channels and a tracking band rolling down the picture. There is no navigation bar. You get around by talking to Mr. P, the station's host, or by tuning channels from the keyboard.
+
+## Mr. P
+
+Mr. P is a low-poly alien in a bubble helmet, drawn in Three.js and rendered as a bitmap so he matches the tube. He drifts around the screen when nobody is talking to him and flies back when you start typing.
+
+His replies stream from a language model through a small route handler that asks for a short line of text, then a control line saying which instrument to mount under the reply and what mood he's in. His face acts out the mood. When the model is unreachable, he answers from a local phrasebook instead, so the site never goes silent.
+
+## Instruments
+
+Replies can carry instruments: the operator's dossier, a tracking scope of notes, this tape shelf, a contact transmitter, and Star Catcher, a small arcade game drawn in ASCII on a canvas. They are ordinary React components mounted inside the speech bubble.
+
+## Live channels
+
+The Sanctuary, the guestbook, the Star Catcher high-score table and the "tuned in" counter run on Convex. Queries are live, so a new message or signature shows up for everyone without polling, and mutations do their own rate limiting.
+
+## Built for the keyboard
+
+Every part of the station can be driven without a mouse: type anywhere to talk, `/` for slash commands with completion, Alt and a number to change channel, `j` and `k` to scroll, and `?` for the full keyboard map. Sound effects are synthesised with the Web Audio API rather than loaded as files, so the clicks and chirps all come from the same machine.

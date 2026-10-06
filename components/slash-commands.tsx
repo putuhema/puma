@@ -2,8 +2,10 @@
 
 import { useId, useState, type KeyboardEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useSfx } from "@/components/sound-control";
+import { usePreferences } from "@/components/set-preferences";
+import { useSfx, useSound } from "@/components/sound-control";
 import { siteConfig } from "@/lib/site";
+import { touredKey } from "@/lib/station-replies";
 import type { Archive } from "@/lib/transmission";
 import { cn } from "@/lib/utils";
 
@@ -16,12 +18,42 @@ type Suggestion = {
   detail: string;
   complete: string;
   route?: Route;
+  /** A command that runs on its own, with nothing after it. */
+  command?: string;
 };
 
 /** The skills the line knows, typed after a slash. */
-const commands = [{ name: "go", detail: "Tune to a channel or a note" }];
+const commands = [
+  { name: "go", detail: "Tune to a channel, a project or a note", takes: true },
+  { name: "back", detail: "Back to where you just were", takes: false },
+  { name: "home", detail: "Home to the chat with Mr. P", takes: false },
+  { name: "teach", detail: "Mr. P's tour: how to get around", takes: false },
+  { name: "help", detail: "Same as /teach: the tour again", takes: false },
+  { name: "whoami", detail: "Who runs this place", takes: false },
+  { name: "now", detail: "What the operator is up to", takes: false },
+  { name: "play", detail: "Star Catcher, right here", takes: false },
+  { name: "resume", detail: "The plain facts, on teletext", takes: false },
+  { name: "guestbook", detail: "Sign the station's book", takes: false },
+  { name: "theme", detail: "Change the phosphor: white, green, amber", takes: false },
+  { name: "effects", detail: "Scanlines, glow and static on or off", takes: false },
+  { name: "mute", detail: "Sound on or off", takes: false },
+];
 
-/** Everywhere /go can take you: the channels, then every note. */
+/** Skills that are really a question for Mr. P. */
+const questions: Record<string, string> = {
+  whoami: "Who runs this place?",
+  now: "What's the operator up to these days?",
+  play: "I'm bored. Got a game?",
+};
+
+/** Skills that are really a trip somewhere. */
+const shortcuts: Record<string, string> = {
+  home: "/",
+  resume: "/teletext",
+  guestbook: "/guestbook",
+};
+
+/** Everywhere /go can take you: the channels, the extras, then every project and note. */
 function routesFor(archive: Archive): Route[] {
   return [
     ...siteConfig.navigation.map((item) => ({
@@ -29,6 +61,18 @@ function routesFor(archive: Archive): Route[] {
       label: item.label,
       detail: `Channel 0${item.shortcut}`,
       href: item.href,
+    })),
+    ...siteConfig.extras.map((item) => ({
+      value: item.label.toLowerCase().replace(/\s+/g, "-"),
+      label: item.label,
+      detail: item.detail,
+      href: item.href,
+    })),
+    ...archive.projects.map((project) => ({
+      value: `projects/${project.slug}`,
+      label: project.title,
+      detail: "Project",
+      href: project.href,
     })),
     ...archive.notes.map((note) => ({
       value: `notes/${note.slug}`,
@@ -58,20 +102,28 @@ function parse(draft: string) {
 /**
  * Slash commands on a chat line: a leading "/" opens a list of skills, and
  * /go suggests where it can take you. ↑ ↓ pick, Tab completes, Enter goes,
- * Esc clears the line.
+ * Esc clears the line. Skills that are questions go to Mr. P via `onAsk`;
+ * /teach and /help replay his tour via `onTeach`, or, away from the desk,
+ * take the visitor home to hear it.
  */
 export function useSlashCommands({
   draft,
   setDraft,
   archive,
+  onAsk,
+  onTeach,
 }: {
   draft: string;
   setDraft: (draft: string) => void;
   archive: Archive;
+  onAsk: (question: string) => void;
+  onTeach?: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const sound = useSfx();
+  const { toggleMuted } = useSound();
+  const { toggleEffects, cyclePhosphor } = usePreferences();
   const listId = useId();
   // Both reset whenever the draft changes, without an effect.
   const [selection, setSelection] = useState({ draft, index: 0 });
@@ -91,11 +143,14 @@ export function useSlashCommands({
         key: item.name,
         value: `/${item.name}`,
         detail: item.detail,
-        complete: `/${item.name} `,
+        complete: item.takes ? `/${item.name} ` : `/${item.name}`,
+        command: item.takes ? undefined : item.name,
       }));
   } else if (active && command === "go") {
     const query = argument ?? "";
     suggestions = routes
+      // No point suggesting the page you're already on.
+      .filter((route) => route.href !== pathname)
       .filter(
         (route) =>
           route.value.includes(query) ||
@@ -129,6 +184,37 @@ export function useSlashCommands({
     if (route.href === pathname) return;
     sound.key();
     router.push(route.href);
+  }
+
+  function run(name: string) {
+    if (name === "teach" || name === "help") {
+      if (onTeach) {
+        setDraft("");
+        sound.key();
+        onTeach();
+        return;
+      }
+      // The tour lives on the desk: forget it was seen, and head home for it.
+      window.localStorage.removeItem(touredKey);
+      go({ value: name, label: "Home", detail: "", href: "/" });
+      return;
+    }
+    if (shortcuts[name]) {
+      go({ value: name, label: name, detail: "", href: shortcuts[name] });
+      return;
+    }
+    setDraft("");
+    if (questions[name]) {
+      onAsk(questions[name]);
+      return;
+    }
+    sound.key();
+    if (name === "theme") cyclePhosphor();
+    else if (name === "effects") toggleEffects();
+    else if (name === "mute") toggleMuted();
+    // Landed here first? There's nowhere on the station to go back to.
+    else if (window.history.length > 1) router.back();
+    else router.push("/");
   }
 
   /** Arrows, Tab and Esc while a slash command is being typed. True if handled. */
@@ -178,11 +264,18 @@ export function useSlashCommands({
             : "Go where? Pick one below.",
         });
       }
-    } else if (chosen) {
+    } else if (commands.some((item) => !item.takes && item.name === command)) {
+      run(command);
+    } else if (argument === null && chosen?.command) {
+      run(chosen.command);
+    } else if (argument === null && chosen) {
       setDraft(chosen.complete);
     } else {
       sound.error();
-      setNotice({ draft, text: `No skill called “/${command}”. Try /go.` });
+      setNotice({
+        draft,
+        text: `No skill called “/${command}”. Clear the line and type / to see them all.`,
+      });
     }
     return true;
   }
@@ -209,6 +302,7 @@ export function useSlashCommands({
         warning={warning}
         onPick={(item) => {
           if (item.route) go(item.route);
+          else if (item.command) run(item.command);
           else setDraft(item.complete);
         }}
       />

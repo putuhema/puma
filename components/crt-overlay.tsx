@@ -7,7 +7,7 @@
  */
 export function CrtOverlay({ curvedGlass }: { curvedGlass: boolean }) {
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+    <div aria-hidden="true" data-crt-glass className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {/* Tracking band rolling down the picture. */}
       <div className="animate-tracking absolute inset-x-0 top-0 h-[14vh] bg-[linear-gradient(to_bottom,transparent,rgb(255_255_255/0.035)_40%,rgb(255_255_255/0.07)_50%,rgb(255_255_255/0.035)_60%,transparent)] mix-blend-screen">
         <div className="tv-static animate-snow absolute inset-x-0 top-[46%] h-1.5 opacity-40" />

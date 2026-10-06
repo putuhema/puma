@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { InstrumentMount } from "@/components/instruments";
 import { MrP3D } from "@/components/mr-p-3d";
 import { useSlashCommands } from "@/components/slash-commands";
-import { PrintedText, ThinkingDots } from "@/components/speech";
+import { LineAnnouncer, PrintedText, ThinkingDots } from "@/components/speech";
 import { useSfx } from "@/components/sound-control";
 import { useConversation } from "@/hooks/use-conversation";
 import { busyPrompts, linePrompts, pocketGreeting } from "@/lib/station-replies";
@@ -41,7 +41,12 @@ export function DockedMrP({ archive }: { archive: Archive }) {
     conversation.skip();
   }
 
-  const slash = useSlashCommands({ draft, setDraft, archive });
+  const slash = useSlashCommands({
+    draft,
+    setDraft,
+    archive,
+    onAsk: (question) => void conversation.ask(question, true),
+  });
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,7 +65,8 @@ export function DockedMrP({ archive }: { archive: Archive }) {
   }
 
   return (
-    <div className="fixed right-2 bottom-2 z-50 flex flex-col items-end pb-[env(safe-area-inset-bottom)] sm:flex-row sm:items-end">
+    <div data-no-print className="fixed right-2 bottom-2 z-50 flex flex-col items-end pb-[env(safe-area-inset-bottom)] sm:flex-row sm:items-end">
+      <LineAnnouncer text={open && lineDone && current ? current.text : null} />
       <AnimatePresence>
         {open && (
           <motion.section
@@ -90,7 +96,6 @@ export function DockedMrP({ archive }: { archive: Archive }) {
               </button>
 
               <div
-                aria-live="polite"
                 onClick={() => printingId && conversation.skip()}
                 className="max-h-[min(50dvh,26rem)] min-h-8 overflow-y-auto overscroll-contain [scrollbar-width:thin]"
               >
@@ -114,6 +119,7 @@ export function DockedMrP({ archive }: { archive: Archive }) {
                         <InstrumentMount
                           instrument={instrument}
                           archive={archive}
+                          entry={current?.entry}
                           onAsk={(question) => void conversation.ask(question, true)}
                         />
                       </div>
@@ -152,7 +158,7 @@ export function DockedMrP({ archive }: { archive: Archive }) {
                         ? busyPrompts[sentLines.length % busyPrompts.length]
                         : linePrompts[(sentLines.length % (linePrompts.length - 1)) + 1]
                     }
-                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground sm:text-sm"
                   />
                   <span aria-hidden="true" className="type-label shrink-0 text-muted-foreground">
                     ⏎

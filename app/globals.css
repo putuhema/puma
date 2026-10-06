@@ -404,3 +404,80 @@
     @apply bg-osd text-osd-foreground;
   }
 }
+
+/* Other phosphors, picked with /theme: P1 green and P3 amber. */
+:root[data-phosphor="green"] {
+  --foreground: #b8f5c4;
+  --tube-foreground: #a9f7b8;
+  --muted-foreground: #86ab8e;
+  --glow:
+    -0.04em 0 0 rgb(255 40 80 / 0.3),
+    0.04em 0 0 rgb(40 140 255 / 0.3),
+    0 0 0.5em rgb(120 255 150 / 0.35);
+}
+
+:root[data-phosphor="amber"] {
+  --foreground: #ffd9a0;
+  --tube-foreground: #ffcc80;
+  --muted-foreground: #b39a78;
+  --glow:
+    -0.04em 0 0 rgb(255 40 80 / 0.3),
+    0.04em 0 0 rgb(40 140 255 / 0.3),
+    0 0 0.5em rgb(255 180 90 / 0.35);
+}
+
+/* Effects off (/effects): a clean picture, no glass, glow, static or tears. */
+:root[data-effects="off"] {
+  --glow: none;
+
+  & [data-crt-glass] {
+    display: none;
+  }
+
+  & .tube::after,
+  & .tv-static.animate-static {
+    display: none;
+  }
+
+  & .animate-tear,
+  & .animate-tube-on,
+  & .animate-snow,
+  & .animate-flicker,
+  & .animate-tracking {
+    animation: none;
+  }
+}
+
+/* On paper: black ink, no glass, no mascot, the whole page and not a window. */
+@media print {
+  :root {
+    --background: #fff;
+    --surface: #fff;
+    --sunken: #f2f2f2;
+    --foreground: #000;
+    --muted-foreground: #444;
+    --rule: #ccc;
+    --border: #999;
+    --glow: none;
+  }
+
+  [data-crt-glass],
+  [data-no-print] {
+    display: none !important;
+  }
+}
+
+@media print {
+  .tube {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .tube::after {
+    display: none;
+  }
+
+  body {
+    text-shadow: none;
+  }
+}

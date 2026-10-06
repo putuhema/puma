@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ConvexClientProvider } from "@/components/convex-client-provider";
+import { OnAir } from "@/components/convex-client-provider";
 import { Sanctuary } from "@/components/sanctuary";
 import { TubeScreen } from "@/components/tube-screen";
 import { siteConfig } from "@/lib/site";
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function SanctuaryPage() {
   return (
     <TubeScreen channel="03" label="Sanctuary" glass="blue" fit>
-      <ConvexClientProvider
+      <OnAir
         offline={
           <div className="type-osd flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
             <p className="bg-osd-foreground px-2 text-lg text-osd">Sanctuary</p>
@@ -26,7 +26,7 @@ export default function SanctuaryPage() {
         }
       >
         <Sanctuary />
-      </ConvexClientProvider>
+      </OnAir>
     </TubeScreen>
   );
 }

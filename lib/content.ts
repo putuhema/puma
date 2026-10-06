@@ -29,6 +29,12 @@ export type EntryMetadata = {
   tags: string[];
   draft: boolean;
   externalUrl?: string;
+  /** Projects: what the operator did on it. */
+  role?: string;
+  /** Projects: what it's built with. */
+  stack: string[];
+  /** Projects: where the source lives. */
+  repoUrl?: string;
 };
 
 export type ContentEntry = EntryMetadata & {
@@ -68,23 +74,27 @@ function parseMetadata(data: Record<string, unknown>, filePath: string): EntryMe
     assertDate(data.updatedAt, "updatedAt", filePath);
   }
 
-  if (
-    data.tags !== undefined &&
-    (!Array.isArray(data.tags) || data.tags.some((tag) => typeof tag !== "string"))
-  ) {
-    throw new Error(`${filePath}: frontmatter field "tags" must be an array of strings.`);
+  for (const field of ["tags", "stack"] as const) {
+    const value = data[field];
+    if (value !== undefined && (!Array.isArray(value) || value.some((item) => typeof item !== "string"))) {
+      throw new Error(`${filePath}: frontmatter field "${field}" must be an array of strings.`);
+    }
   }
+
+  if (data.role !== undefined) assertString(data.role, "role", filePath);
 
   if (data.draft !== undefined && typeof data.draft !== "boolean") {
     throw new Error(`${filePath}: frontmatter field "draft" must be a boolean.`);
   }
 
-  if (data.externalUrl !== undefined) {
-    assertString(data.externalUrl, "externalUrl", filePath);
+  for (const field of ["externalUrl", "repoUrl"] as const) {
+    const value = data[field];
+    if (value === undefined) continue;
+    assertString(value, field, filePath);
     try {
-      new URL(data.externalUrl);
+      new URL(value);
     } catch {
-      throw new Error(`${filePath}: frontmatter field "externalUrl" must be an absolute URL.`);
+      throw new Error(`${filePath}: frontmatter field "${field}" must be an absolute URL.`);
     }
   }
 
@@ -96,6 +106,9 @@ function parseMetadata(data: Record<string, unknown>, filePath: string): EntryMe
     tags: (data.tags as string[] | undefined) ?? [],
     draft: (data.draft as boolean | undefined) ?? false,
     externalUrl: data.externalUrl as string | undefined,
+    role: data.role as string | undefined,
+    stack: (data.stack as string[] | undefined) ?? [],
+    repoUrl: data.repoUrl as string | undefined,
   };
 }
 
@@ -174,16 +187,19 @@ export function getEntries(section?: ContentSection): ContentEntry[] {
     });
 }
 
-/** What Mr. P knows about: every published note, trimmed down. */
+/** What Mr. P knows about: every published note and project, trimmed down. */
 export function getArchive(): Archive {
+  const trim = ({ href, slug, title, publishedAt, summary, stack }: ContentEntry) => ({
+    href,
+    slug,
+    title,
+    publishedAt,
+    summary,
+    stack,
+  });
   return {
-    notes: getEntries("notes").map(({ href, slug, title, publishedAt, summary }) => ({
-      href,
-      slug,
-      title,
-      publishedAt,
-      summary,
-    })),
+    notes: getEntries("notes").map(trim),
+    projects: getEntries("projects").map(trim),
   };
 }
 

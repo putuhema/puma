@@ -1,7 +1,18 @@
 import type { Emotion } from "@/lib/emotions";
 
 /** Instruments the station can mount into a reply. */
-export const instruments = ["dossier", "notes", "sanctuary", "game", "transmit", "commands", "channels"] as const;
+export const instruments = [
+  "dossier",
+  "notes",
+  "projects",
+  "file",
+  "now",
+  "sanctuary",
+  "guestbook",
+  "game",
+  "transmit",
+  "channels",
+] as const;
 export type Instrument = (typeof instruments)[number];
 
 export type Transmission = {
@@ -14,22 +25,32 @@ export type Transmission = {
   complete: boolean;
   /** How Mr. P feels about this line (station replies only). */
   emotion?: Emotion;
+  /** The note or project the "file" instrument pulls out, by href. */
+  entry?: string;
 };
 
 /** What the station is doing right now; drives the readout and lamps. */
 export type StationStatus = "standby" | "receiving" | "printing";
 
-export type ArchiveNote = {
+export type ArchiveEntry = {
   href: string;
   slug: string;
   title: string;
   publishedAt: string;
   summary: string;
+  stack: string[];
 };
 
 export type Archive = {
-  notes: ArchiveNote[];
+  notes: ArchiveEntry[];
+  projects: ArchiveEntry[];
 };
+
+/** A note or project on file, by its href. */
+export function findEntry(archive: Archive, href: string | undefined) {
+  if (!href) return undefined;
+  return [...archive.projects, ...archive.notes].find((entry) => entry.href === href);
+}
 
 /** Shape of POST /api/chat: plain-text history, newest last. */
 export type ChatRequest = {
@@ -39,14 +60,4 @@ export type ChatRequest = {
 /** One line of the /api/chat NDJSON stream. */
 export type ChatEvent =
   | { type: "text"; text: string }
-  | { type: "meta"; instruments: Instrument[]; emotion: Emotion };
-
-/** The soft keys under the composer, with the phrase each one sends. */
-export const softKeys = [
-  { key: "1", label: "Who", ask: "Who runs this place?", instrument: "dossier" },
-  { key: "2", label: "Notes", ask: "Got any notes worth reading?", instrument: "notes" },
-  { key: "3", label: "Sanctuary", ask: "Are there other people out here?", instrument: "sanctuary" },
-  { key: "4", label: "Play", ask: "I'm bored. Got a game?", instrument: "game" },
-  { key: "5", label: "Transmit", ask: "How do I get in touch? Carrier pigeon?", instrument: "transmit" },
-  { key: "0", label: "Help", ask: "Help", instrument: "commands" },
-] as const satisfies readonly { key: string; label: string; ask: string; instrument: Instrument }[];
+  | { type: "meta"; instruments: Instrument[]; emotion: Emotion; entry?: string };

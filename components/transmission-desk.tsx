@@ -15,11 +15,12 @@ import { KeyboardMap } from "@/components/keyboard-map";
 import { MrP3D } from "@/components/mr-p-3d";
 import { useSlashCommands } from "@/components/slash-commands";
 import { useSfx } from "@/components/sound-control";
-import { PrintedText, ThinkingDots } from "@/components/speech";
+import { LineAnnouncer, PrintedText, ThinkingDots } from "@/components/speech";
 import { useStation } from "@/components/station-context";
+import { StationReadout } from "@/components/station-readout";
 import { useConversation } from "@/hooks/use-conversation";
 import { useWander } from "@/hooks/use-wander";
-import { bootGreeting, busyPrompts, linePrompts } from "@/lib/station-replies";
+import { bootGreeting, busyPrompts, linePrompts, tour, touredKey } from "@/lib/station-replies";
 import type { Archive } from "@/lib/transmission";
 
 function isTypingTarget(target: EventTarget | null) {
@@ -64,6 +65,8 @@ export function TransmissionDesk({
   const recallIndex = useRef(-1);
   const input = useRef<HTMLInputElement>(null);
   const transcript = useRef<HTMLElement>(null);
+  /** Which line of the first-visit tour he's on, or null when he isn't touring. */
+  const [tourStep, setTourStep] = useState<number | null>(null);
 
   useEffect(() => {
     setStatus(receiving ? "receiving" : busy ? "printing" : "standby");
@@ -77,7 +80,7 @@ export function TransmissionDesk({
     screen.current?.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }, [currentId, reduceMotion, screen]);
 
-  const { ask: send, replayCurrent, skip } = conversation;
+  const { ask: send, say, replayCurrent, skip } = conversation;
   const ask = useCallback(
     (question: string, viaSoftKey = false) => {
       if (!question.trim() || busy) return;
@@ -100,15 +103,48 @@ export function TransmissionDesk({
     input.current?.focus();
   }, [replayCurrent, sound]);
 
+  /** The tour: his bubble pops up and he walks the visitor round the set. */
+  const startTour = useCallback(() => {
+    window.localStorage.setItem(touredKey, "1");
+    greeted.current = true;
+    setOpen(true);
+    setTourStep(0);
+    say(tour[0]);
+  }, [say]);
+
+  const nextTour = useCallback(() => {
+    if (tourStep === null) return;
+    sound.key();
+    const next = tourStep + 1;
+    if (next >= tour.length) {
+      setTourStep(null);
+      return;
+    }
+    setTourStep(next);
+    say(tour[next]);
+  }, [say, sound, tourStep]);
+
+  // A visitor's first time on the desk: he gives the tour, once, unless
+  // they arrived with a question already in hand (?ask=…).
+  useEffect(() => {
+    if (initialAsk || window.localStorage.getItem(touredKey)) return;
+    const timer = window.setTimeout(startTour, 700);
+    return () => window.clearTimeout(timer);
+    // On arrival only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /** Clicking him: his bubble pops up, or goes away. */
   const poke = useCallback(() => {
     if (!open) return talk();
     setOpen(false);
+    setTourStep(null);
     skip();
   }, [open, skip, talk]);
 
   const close = useCallback(() => {
     setOpen(false);
+    setTourStep(null);
     skip();
     input.current?.focus();
   }, [skip]);
@@ -187,13 +223,24 @@ export function TransmissionDesk({
     return () => window.removeEventListener("keydown", operateDesk);
   }, [close, draft, focusLatestInstrument, keymapOpen, open, printingId, receiving, skip]);
 
-  const slash = useSlashCommands({ draft, setDraft, archive });
+  const slash = useSlashCommands({
+    draft,
+    setDraft,
+    archive,
+    onAsk: (question) => ask(question, true),
+    onTeach: startTour,
+  });
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (slash.submit() || busy) return;
-    ask(draft);
+    // Mid-tour, Enter on an empty line is "go on".
+    if (tourStep !== null && !draft.trim()) return nextTour();
     setDraft("");
+    if (/^(help|tour|\?)$/i.test(draft.trim())) return startTour();
+    // Asking something real ends the tour; the visitor's got the hang of it.
+    setTourStep(null);
+    ask(draft);
   }
 
   function operateLine(event: ReactKeyboardEvent<HTMLInputElement>) {
@@ -213,10 +260,9 @@ export function TransmissionDesk({
     }
   }
 
-  /** Showing something hands-on (a file, the scope, a game) rather than just talk. */
-  const showcase = conversation.instruments.some((instrument) => instrument !== "commands");
-  /** What his line brings along; the choices are always on offer below it. */
-  const mounted = conversation.instruments.filter((instrument) => instrument !== "commands");
+  /** What his line brings along: a file, the scope, a game. */
+  const mounted = conversation.instruments;
+  const touring = tourStep !== null;
 
   // Left alone, he plays around the stage; talk to him (or start typing) and
   // he flies back to answer.
@@ -234,6 +280,10 @@ export function TransmissionDesk({
     <div className="relative flex min-h-dvh flex-1 flex-col">
       <AsciiSpace className="absolute inset-0 size-full" />
       <h1 className="sr-only">Talk to Mr. P</h1>
+      <StationReadout
+        archive={archive}
+        className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-3 z-0 sm:top-[calc(env(safe-area-inset-top)+1.25rem)] sm:left-6 lg:left-10"
+      />
 
       {/* Deep space: Mr. P floats low and centre, the bubble pops up over him. */}
       <div ref={stage} className="relative flex flex-1 flex-col items-center justify-end px-3 pt-6 pb-2 sm:px-6">
@@ -245,7 +295,6 @@ export function TransmissionDesk({
                 key="bubble"
                 ref={transcript}
                 aria-label="Mr. P says"
-                aria-live="polite"
                 onClick={() => printingId && skip()}
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6, y: 24 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -304,6 +353,7 @@ export function TransmissionDesk({
                                 <InstrumentMount
                                   instrument={instrument}
                                   archive={archive}
+                                  entry={current?.entry}
                                   onAsk={(question) => ask(question, true)}
                                 />
                               </div>
@@ -312,20 +362,40 @@ export function TransmissionDesk({
                         )}
                       </div>
 
-                      {/* Whatever he just showed, the choices stay pinned under
-                          it, so there's always a way on to something else. */}
-                      {lineDone && (
-                        <div className="mt-4">
-                          <InstrumentMount
-                            instrument="commands"
-                            archive={archive}
-                            onAsk={(question) => ask(question, true)}
-                          />
+                      {/* On the tour: where he is, and the way on. */}
+                      {touring && lineDone && (
+                        <div className="type-osd mt-4 flex items-center justify-between gap-3 text-sm leading-4">
+                          <span className="text-muted-foreground">
+                            Tour {tourStep + 1}/{tour.length}
+                          </span>
+                          <span className="flex gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                close();
+                              }}
+                              className="border border-rule px-2 py-1 text-muted-foreground outline-none hover:border-osd hover:text-foreground focus-visible:border-osd focus-visible:text-foreground"
+                            >
+                              Skip
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                nextTour();
+                                input.current?.focus();
+                              }}
+                              className="border border-osd bg-osd px-2 py-1 text-osd-foreground outline-none [text-shadow:none] focus-visible:ring-2 focus-visible:ring-osd/40"
+                            >
+                              {tourStep + 1 === tour.length ? "Done ⏎" : "Next ▸ ⏎"}
+                            </button>
+                          </span>
                         </div>
                       )}
 
                       {/* The classic "more" cursor once he's said his piece. */}
-                      {lineDone && !showcase && (
+                      {lineDone && !touring && mounted.length === 0 && (
                         <span
                           aria-hidden="true"
                           className="absolute right-3 bottom-1 animate-bounce font-tube text-xl leading-none text-signal"
@@ -388,7 +458,9 @@ export function TransmissionDesk({
                 placeholder={
                   busy
                     ? busyPrompts[sentLines.length % busyPrompts.length]
-                    : linePrompts[sentLines.length % linePrompts.length]
+                    : touring
+                      ? "⏎ for the next bit, Esc to skip, or ask him something"
+                      : linePrompts[sentLines.length % linePrompts.length]
                 }
                 className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
               />
@@ -400,6 +472,7 @@ export function TransmissionDesk({
         </div>
       </div>
 
+      <LineAnnouncer text={open && lineDone && current ? current.text : null} />
       {keymapOpen && <KeyboardMap onClose={() => setKeymapOpen(false)} />}
     </div>
   );

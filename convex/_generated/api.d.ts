@@ -8,8 +8,13 @@
  * @module
  */
 
+import type * as guestbook from "../guestbook.js";
+import type * as limits from "../limits.js";
+import type * as listeners from "../listeners.js";
 import type * as messages from "../messages.js";
 import type * as presence from "../presence.js";
+import type * as scores from "../scores.js";
+import type * as transmissions from "../transmissions.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +23,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  guestbook: typeof guestbook;
+  limits: typeof limits;
+  listeners: typeof listeners;
   messages: typeof messages;
   presence: typeof presence;
+  scores: typeof scores;
+  transmissions: typeof transmissions;
 }>;
 
 /**

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { OnAir } from "@/components/convex-client-provider";
+import { HighScores } from "@/components/high-scores";
 import { useSfx } from "@/components/sound-control";
 import type { Sfx } from "@/lib/sfx";
 
@@ -30,8 +32,19 @@ const ship = [".-^-.", "<=o=o=>"];
  * in a row build a multiplier; it all speeds up the longer you last. Arrow
  * keys or A/D, or drag along the screen; Space to launch.
  */
-export function StarCatcher({ onReport }: { onReport?: (score: number) => void }) {
+export function StarCatcher({
+  onReport,
+  onRecord,
+  autoFocus = false,
+}: {
+  /** Take the keyboard on arrival, so Space launches straight away. */
+  autoFocus?: boolean;
+  onReport?: (score: number) => void;
+  /** Called when a score takes first place on the high-score table. */
+  onRecord?: (score: number) => void;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const cabinet = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("ready");
   const [finalScore, setFinalScore] = useState(0);
   const sound = useSfx();
@@ -46,6 +59,13 @@ export function StarCatcher({ onReport }: { onReport?: (score: number) => void }
   useEffect(() => {
     soundRef.current = sound;
   }, [sound]);
+
+  // A frame late: the console focuses the screen on every new page first.
+  useEffect(() => {
+    if (!autoFocus) return;
+    const frame = requestAnimationFrame(() => cabinet.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [autoFocus]);
 
   useEffect(() => {
     const element = canvas.current;
@@ -268,6 +288,8 @@ export function StarCatcher({ onReport }: { onReport?: (score: number) => void }
   }, []);
 
   function steer(event: KeyboardEvent<HTMLDivElement>, down: boolean) {
+    // Typing initials or using the board's buttons isn't steering.
+    if (event.target !== event.currentTarget) return;
     const { held } = game.current;
     const key = event.key.toLowerCase();
     if (key === "arrowleft" || key === "a") held.left = down;
@@ -286,6 +308,7 @@ export function StarCatcher({ onReport }: { onReport?: (score: number) => void }
 
   return (
     <div
+      ref={cabinet}
       role="application"
       aria-label="Star Catcher. Left and right arrows steer the saucer; Space launches."
       tabIndex={0}
@@ -308,11 +331,14 @@ export function StarCatcher({ onReport }: { onReport?: (score: number) => void }
       <p className="sr-only" aria-live="polite">
         {phase === "over" ? `Game over. You scored ${finalScore}.` : phase === "playing" ? "Playing" : ""}
       </p>
+      <OnAir>
+        <HighScores phase={phase} score={finalScore} onRecord={onRecord} />
+      </OnAir>
       {phase === "over" && onReport && (
         <button
           type="button"
           onClick={() => onReport(finalScore)}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-tube-foreground px-2 py-0.5 font-tube text-xl text-tube uppercase outline-none focus-visible:ring-2 focus-visible:ring-osd"
+          className="absolute bottom-3 left-3 bg-tube-foreground px-2 py-0.5 font-tube text-xl text-tube uppercase outline-none focus-visible:ring-2 focus-visible:ring-osd"
         >
           Tell Mr. P my score
         </button>

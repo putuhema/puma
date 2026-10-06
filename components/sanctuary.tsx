@@ -5,9 +5,9 @@ import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import { useSfx } from "@/components/sound-control";
+import { stationSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-const sessionKey = "puma:sanctuary:session";
 const nameKey = "puma:sanctuary:name";
 const heartbeatMs = 15_000;
 /** Seen this recently, still counts as here. */
@@ -24,11 +24,7 @@ function useSeat() {
   const [seat, setSeat] = useState<{ sessionId: string; name: string } | null>(null);
 
   useEffect(() => {
-    let sessionId = window.localStorage.getItem(sessionKey);
-    if (!sessionId) {
-      sessionId = crypto.randomUUID();
-      window.localStorage.setItem(sessionKey, sessionId);
-    }
+    const sessionId = stationSession();
     const name =
       window.localStorage.getItem(nameKey) ?? `Earthling-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
     // Read once on mount: storage only exists in the browser.
@@ -206,7 +202,7 @@ export function Sanctuary() {
                   setNaming(false);
                 }
               }}
-              className="w-40 border border-osd-foreground bg-transparent px-1.5 py-0.5 outline-none focus-visible:bg-osd-foreground/10"
+              className="w-40 border border-osd-foreground bg-transparent px-1.5 py-0.5 text-base outline-none focus-visible:bg-osd-foreground/10 sm:text-xs"
             />
           ) : (
             <button

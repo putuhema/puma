@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCrtBulge } from "@/components/crt-bulge";
 import { CrtOverlay } from "@/components/crt-overlay";
 import { DockedMrP } from "@/components/docked-mr-p";
+import { usePreferences } from "@/components/set-preferences";
 import { useSfx, useSound } from "@/components/sound-control";
 import { useStation } from "@/components/station-context";
 import { siteConfig } from "@/lib/site";
@@ -32,8 +33,9 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
   const sound = useSfx();
   /** Full lens: bend the picture itself, not just the glass. Softens text. */
   const [fullLens, setFullLens] = useState(false);
+  const { effects } = usePreferences();
   const { filters: lensFilters, available: lensAvailable } = useCrtBulge();
-  const bulging = fullLens && lensAvailable;
+  const bulging = fullLens && lensAvailable && effects;
   const previousPath = useRef(pathname);
 
   // Changing channel: the VCR mechanism clunks.
@@ -117,11 +119,14 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
       {lensFilters}
       {/* The full lens sits on a viewport-sized frame, not the scroller, so only
           what is on screen is drawn through it. */}
-      <div className="fixed inset-0 bg-background" style={bulging ? { filter: "url(#crt-bulge)" } : undefined}>
+      <div
+        className="fixed inset-0 bg-background print:static"
+        style={bulging ? { filter: "url(#crt-bulge)" } : undefined}
+      >
       <div
         ref={screen}
         tabIndex={-1}
-        className="size-full overflow-y-auto overscroll-contain outline-none [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]"
+        className="size-full overflow-y-auto overscroll-contain outline-none [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin] print:h-auto print:overflow-visible"
       >
         <div className="flex min-h-full flex-col">
           <div key={pathname} className="animate-tear flex min-w-0 flex-1 flex-col">
@@ -132,7 +137,7 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
       {/* Off the chat, Mr. P floats docked in the corner; click him to chat. */}
       {pathname !== "/" && <DockedMrP archive={archive} />}
       </div>
-      <CrtOverlay curvedGlass={lensAvailable} />
+      <CrtOverlay curvedGlass={lensAvailable && effects} />
     </>
   );
 }

@@ -13,14 +13,22 @@ const groups: { title: string; keys: [string, string][] }[] = [
       ["↑ / ↓", "Recall earlier messages"],
       ["Esc", "Fast-forward a reply, close his bubble, or close this map"],
       ["clear", "Type it to rewind the tape"],
+      ["/teach · /help", "Mr. P's tour of the set, again"],
       ["/go", "Go anywhere: Tab completes, ⏎ goes"],
+      ["/back · /home", "Back a page, or home to the chat"],
+      ["/whoami · /now", "Who runs this place, and what they're up to"],
+      ["/resume", "The plain facts, on teletext"],
+      ["/theme · /effects", "Phosphor colour; scanlines and glow on or off"],
     ],
   },
   {
     title: "Channels",
     keys: [
-      ...siteConfig.navigation.map((item): [string, string] => [`Alt ${item.shortcut}`, item.label]),
-      ["1 2 3", "Same, off the chat"],
+      ...siteConfig.navigation.map((item): [string, string] => [
+        `Alt ${item.shortcut}`,
+        item.label,
+      ]),
+      ["1 2 3 4", "Same, off the chat"],
       ["go …", "Or just ask Mr. P: \u201ctake me to the notes\u201d"],
       ["Esc", "Leave a text box, then step back out"],
       ["j k g G", "Scroll, top, bottom"],
@@ -74,7 +82,11 @@ export function KeyboardMap({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between gap-4 bg-osd-foreground px-3 py-1 text-osd [text-shadow:none]">
           <h2 className="text-lg leading-7 sm:text-xl">Keyboard map</h2>
-          <button type="button" onClick={onClose} className="text-sm outline-none focus-visible:underline">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm outline-none focus-visible:underline"
+          >
             Esc ✕
           </button>
         </div>
@@ -85,9 +97,14 @@ export function KeyboardMap({ onClose }: { onClose: () => void }) {
               <h3 className="text-sm leading-6 opacity-80">{group.title}</h3>
               <dl className="mt-2 flex flex-col gap-1.5">
                 {group.keys.map(([keys, action]) => (
-                  <div key={keys + action} className="flex gap-3 font-tube text-lg leading-5 normal-case">
+                  <div
+                    key={keys + action}
+                    className="flex gap-3 font-tube text-lg leading-5 normal-case"
+                  >
                     <dt className="w-24 shrink-0">
-                      <span className="bg-osd-foreground px-1.5 text-osd [text-shadow:none]">{keys}</span>
+                      <span className="bg-osd-foreground px-1.5 text-osd [text-shadow:none]">
+                        {keys}
+                      </span>
                     </dt>
                     <dd>{action}</dd>
                   </div>

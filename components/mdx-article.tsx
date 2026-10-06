@@ -41,6 +41,22 @@ export function MdxArticle({ children, entry }: { children: ReactNode; entry: Co
           <dl className="mt-8 grid gap-x-12 sm:grid-cols-2">
             <Leader label="Filed">{formatEntryDate(entry.publishedAt)}</Leader>
             {entry.updatedAt && <Leader label="Revised">{formatEntryDate(entry.updatedAt)}</Leader>}
+            {entry.role && <Leader label="Role">{entry.role}</Leader>}
+            {entry.stack.length > 0 && <Leader label="Stack">{entry.stack.join(" · ")}</Leader>}
+            {entry.externalUrl && (
+              <Leader label="Live">
+                <a href={entry.externalUrl} className="underline decoration-dotted underline-offset-4 outline-none hover:text-osd focus-visible:text-osd">
+                  {new URL(entry.externalUrl).host} ↗
+                </a>
+              </Leader>
+            )}
+            {entry.repoUrl && (
+              <Leader label="Source">
+                <a href={entry.repoUrl} className="underline decoration-dotted underline-offset-4 outline-none hover:text-osd focus-visible:text-osd">
+                  {new URL(entry.repoUrl).host} ↗
+                </a>
+              </Leader>
+            )}
             {entry.tags.length > 0 && (
               <Leader label="Tags">
                 {entry.tags.map((tag) => (

@@ -97,7 +97,11 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
     (question: string) => {
       const reply = localReply(question, archive) ?? unclearReply();
       if (!localReply(question, archive)) sound.error();
-      startReply({ ...makeTransmission("station", reply.text, reply.instruments), emotion: reply.emotion });
+      startReply({
+        ...makeTransmission("station", reply.text, reply.instruments),
+        emotion: reply.emotion,
+        entry: reply.entry,
+      });
     },
     [archive, sound, startReply],
   );
@@ -110,7 +114,7 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
 
       if (/^(clear|cls|reset|rewind)$/i.test(text)) {
         const fresh: Transmission = {
-          ...makeTransmission("station", "Tape rewound. I've forgotten everything, which is very relaxing. What now?", ["commands"]),
+          ...makeTransmission("station", "Tape rewound. I've forgotten everything, which is very relaxing. What now?"),
           emotion: "excited",
         };
         setLog([fresh]);
@@ -186,7 +190,13 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
             setLog((current) =>
               current.map((item) =>
                 item.id === reply.id
-                  ? { ...item, instruments: event.instruments, emotion: event.emotion, complete: true }
+                  ? {
+                      ...item,
+                      instruments: event.instruments,
+                      emotion: event.emotion,
+                      entry: event.entry,
+                      complete: true,
+                    }
                   : item,
               ),
             );
@@ -208,7 +218,14 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
     [busy, deliverLocal, log, pathname, reduceMotion, router, sound, startReply],
   );
 
-  const finishPrinting = useCallback((transmission: Transmission) => {
+  /** A line from Mr. P that nobody asked for: the tour, say. */
+  const say = useCallback(
+    (reply: Reply) =>
+      startReply({ ...makeTransmission("station", reply.text, reply.instruments), emotion: reply.emotion }),
+    [startReply],
+  );
+
+    const finishPrinting = useCallback((transmission: Transmission) => {
     setPrintingId((current) => (current === transmission.id ? null : current));
   }, []);
 
@@ -234,6 +251,7 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
     emotion,
     mascotState,
     ask,
+    say,
     finishPrinting,
     replayCurrent,
     skip,

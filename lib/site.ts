@@ -1,4 +1,4 @@
-export const contentSections = ["notes", "books"] as const;
+export const contentSections = ["notes"] as const;
 
 export type ContentSection = (typeof contentSections)[number];
 
@@ -12,11 +12,6 @@ export const sectionDetails: Record<
     title: "Notes",
     description: "Small observations, useful fragments, and things worth remembering.",
     index: "02",
-  },
-  books: {
-    title: "Books",
-    description: "A reading ledger: what is open, what stayed, and what changed my mind.",
-    index: "03",
   },
 };
 
@@ -33,7 +28,7 @@ export const siteConfig = {
   navigation: [
     { label: "Chat", href: "/", shortcut: "1" },
     { label: "Notes", href: "/notes", shortcut: "2" },
-    { label: "Tapes", href: "/books", shortcut: "3" },
+    { label: "Sanctuary", href: "/sanctuary", shortcut: "3" },
   ],
   links: [
     { label: "Email", href: "mailto:hello@example.com" },

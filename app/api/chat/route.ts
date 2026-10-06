@@ -17,12 +17,6 @@ const limits = [
 const controlMarker = "§";
 
 function systemPrompt() {
-  const books = getEntries("books")
-    .map(
-      (book) =>
-        `- "${book.title}" by ${book.author} (${book.bookYear}), status: ${book.readingStatus}. ${book.summary}`,
-    )
-    .join("\n");
   const notes = getEntries("notes")
     .map((note) => `- "${note.title}" (${note.publishedAt}). ${note.summary}`)
     .join("\n");
@@ -36,10 +30,7 @@ Facts you may use are only the ones below. Never invent biography, employers, sk
 After your reply, write a newline, then the character ${controlMarker}, then one JSON object on the same line:
 {"instrument": one of ${instruments.map((name) => `"${name}"`).join(", ")} or null, "mood": one of ${emotions.map((name) => `"${name}"`).join(", ")}}
 The mood is how you feel saying this line; your little screen face and body act it out. Vary it with the conversation: excited for good news, love when someone is kind, laugh at jokes, sad when there is no record, confused by nonsense, shy at compliments, wink when playful, grumpy only if someone is rude.
-Instruments mount under your reply: dossier (who the operator is), tapes (books), notes (published notes), game (Star Catcher, a little arcade minigame: fly your saucer, catch stars, dodge rocks; for play or boredom), transmit (contact form, for getting in touch or hiring), commands (when the visitor is lost). Pick one only when it genuinely helps.
-
-Archive, tapes (books):
-${books || "- none yet"}
+Instruments mount under your reply: dossier (who the operator is), notes (published notes), sanctuary (a door to channel 03, the Sanctuary: a live chat room where visitors talk to each other; for anyone wanting company or other people), game (Star Catcher, a little arcade minigame: fly your saucer, catch stars, dodge rocks; for play or boredom), transmit (contact form, for getting in touch or hiring), commands (when the visitor is lost). Pick one only when it genuinely helps.
 
 Archive, notes:
 ${notes || "- none filed yet"}`;

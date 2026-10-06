@@ -19,7 +19,7 @@ const groups: { title: string; keys: [string, string][] }[] = [
     title: "Channels",
     keys: [
       ...siteConfig.navigation.map((item): [string, string] => [`Alt ${item.shortcut}`, item.label]),
-      ["1 2 3", "Same, on Notes and Tapes"],
+      ["1 2 3", "Same, off the chat"],
       ["Esc", "Step back out"],
       ["j k g G", "Scroll, top, bottom"],
     ],
@@ -28,7 +28,6 @@ const groups: { title: string; keys: [string, string][] }[] = [
     title: "Instruments",
     keys: [
       ["Alt ↑", "Jump into the latest instrument"],
-      ["↑ ↓ ⏎", "Pick a tape and play its review"],
       ["← → / A D", "Steer the saucer in Star Catcher"],
       ["⌘/Ctrl ⏎", "Send from the transmitter"],
       ["Esc", "Back to the line"],

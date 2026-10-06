@@ -1,36 +1,14 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Leader } from "@/components/leader";
 import { NotesScope } from "@/components/notes-scope";
 import { StarCatcher } from "@/components/star-catcher";
-import type { ReadingStatus } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
 import { softKeys, type Archive, type Instrument } from "@/lib/transmission";
 import { cn } from "@/lib/utils";
-
-const trackingLength = 16;
-
-/** How far along the tape is wound: finished is full, queued is blank. */
-const trackingByStatus: Record<ReadingStatus, number> = {
-  finished: trackingLength,
-  reading: trackingLength / 2,
-  queued: 0,
-};
-
-export function TrackingBar({ status }: { status?: ReadingStatus }) {
-  const filled = status ? trackingByStatus[status] : 0;
-
-  return (
-    <span aria-hidden="true" className="flex h-3 items-center gap-[3px]">
-      {Array.from({ length: trackingLength }, (_, index) => (
-        <span key={index} className={index < filled ? "h-full w-1.5 bg-current" : "h-0.5 w-1.5 bg-current"} />
-      ))}
-    </span>
-  );
-}
 
 function Dossier({ archive }: { archive: Archive }) {
   return (
@@ -68,7 +46,7 @@ function Dossier({ archive }: { archive: Archive }) {
               </span>
             </Leader>
             <Leader label="On file">
-              {archive.notes.length} notes · {archive.books.length} tapes
+              {archive.notes.length} notes
             </Leader>
           </dl>
         </div>
@@ -84,53 +62,20 @@ function Dossier({ archive }: { archive: Archive }) {
   );
 }
 
-function TapeDeck({ archive }: { archive: Archive }) {
-  const [selected, setSelected] = useState(0);
-  const list = useRef<HTMLOListElement>(null);
-  const { books } = archive;
-
-  // ↑ / ↓ move between tapes like the VCR menu; Enter plays the review.
-  function scrub(event: KeyboardEvent<HTMLOListElement>) {
-    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-    event.preventDefault();
-    const step = event.key === "ArrowDown" ? 1 : -1;
-    const next = (selected + step + books.length) % books.length;
-    setSelected(next);
-    list.current?.querySelectorAll<HTMLAnchorElement>("a")[next]?.focus();
-  }
-
+/** A door to channel 03, where visitors talk to each other live. */
+function SanctuaryDoor() {
   return (
     <div className="tube animate-tube-on type-osd max-w-2xl bg-osd px-5 py-5 text-osd-foreground sm:px-7">
-      <p className="bg-osd-foreground py-0.5 text-center text-lg leading-7 text-osd">VHS · Tape library</p>
-      {books.length === 0 ? (
-        <p className="mt-5">No tapes loaded</p>
-      ) : (
-        <ol ref={list} onKeyDown={scrub} className="mt-5 flex flex-col gap-4">
-          {books.map((book, index) => (
-            <li key={book.href}>
-              <Link
-                href={book.href}
-                onMouseEnter={() => setSelected(index)}
-                onFocus={() => setSelected(index)}
-                className="flex flex-col gap-1 outline-none"
-              >
-                <span className={cn("self-start px-1.5 text-base leading-6", index === selected && "bg-osd-foreground text-osd")}>
-                  {index === selected ? "▶" : "■"} {book.title}
-                </span>
-                <span className="px-1.5 text-xs leading-5 opacity-85">
-                  {[book.author, book.bookYear, book.readingStatus].filter(Boolean).join(" · ")}
-                </span>
-                <span className="px-1.5">
-                  <TrackingBar status={book.readingStatus} />
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
-      <p className="mt-5 text-xs leading-5">
-        Select with (▲▼) and <span className="bg-osd-foreground px-1 text-osd">OK</span> to play the review
+      <p className="bg-osd-foreground py-0.5 text-center text-lg leading-7 text-osd">CH 03 · Sanctuary</p>
+      <p className="mt-4 text-sm leading-6">
+        A quiet room off the main channel where visitors talk to each other in real time. Pick a name, say hello.
       </p>
+      <Link
+        href="/sanctuary"
+        className="mt-4 inline-flex bg-osd-foreground px-2 py-0.5 text-osd outline-none focus-visible:ring-2 focus-visible:ring-osd-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-osd"
+      >
+        ▶ Enter the Sanctuary
+      </Link>
     </div>
   );
 }
@@ -243,8 +188,8 @@ export function InstrumentMount({
   switch (instrument) {
     case "dossier":
       return <Dossier archive={archive} />;
-    case "tapes":
-      return <TapeDeck archive={archive} />;
+    case "sanctuary":
+      return <SanctuaryDoor />;
     case "notes":
       return (
         <TubeBay glass="bg-amber-glass text-signal">

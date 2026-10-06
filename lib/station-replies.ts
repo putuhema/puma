@@ -32,17 +32,12 @@ const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
     }),
   },
   {
-    pattern: /\b(books?|read(ing)?|tapes?|library|shelf)\b/,
-    reply: ({ books }) => {
-      const current = books.find((book) => book.readingStatus === "reading");
-      return {
-        text: current
-          ? `Now playing: ${current.title} by ${current.author}! ${books.length} tape${books.length === 1 ? "" : "s"} in the library, all rewound for you.`
-          : `${books.length} tape${books.length === 1 ? "" : "s"} in the library, all rewound for you! Pick one and I'll play the review.`,
-        instruments: ["tapes"],
-      emotion: "excited",
-      };
-    },
+    pattern: /\b(sanctuary|people|others|someone|community|lonely|room|talk to (other|real))\b/,
+    reply: () => ({
+      text: "Ooh, the Sanctuary! Channel 03 is a cozy little room where visitors chat with each other live. Pick a name and say hiya, earthling!",
+      instruments: ["sanctuary"],
+      emotion: "love",
+    }),
   },
   {
     pattern: /\bscored (\d+)/,
@@ -102,14 +97,14 @@ export function unclearReply(): Reply {
 }
 
 export const bootGreeting: Reply = {
-  text: `Well, hiya there, earthling! I'm Mr. P, ${siteConfig.author}'s host around here. ${siteConfig.author} stepped away from the desk, so you've got me! Just type a question: the operator, the notes, the tapes, anything!`,
+  text: `Well, hiya there, earthling! I'm Mr. P, ${siteConfig.author}'s host around here. ${siteConfig.author} stepped away from the desk, so you've got me! Just type a question: the operator, the notes, the Sanctuary, anything!`,
   instruments: ["commands"],
   emotion: "excited",
 };
 
 /** His hello when poked off the chat, where he floats in the corner. */
 export const pocketGreeting: Reply = {
-  text: "Hiya, earthling! Need a hand? Ask me anything about the operator, the notes, or the tapes.",
+  text: "Hiya, earthling! Need a hand? Ask me anything about the operator, the notes, or the Sanctuary.",
   instruments: [],
   emotion: "happy",
 };

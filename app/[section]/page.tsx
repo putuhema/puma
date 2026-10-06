@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NotesScope } from "@/components/notes-scope";
-import { TapeLibrary } from "@/components/tape-library";
 import { TubeScreen } from "@/components/tube-screen";
 import { getEntries } from "@/lib/content";
 import {
@@ -38,27 +37,10 @@ export async function generateMetadata({ params }: SectionPageProps): Promise<Me
   };
 }
 
-/** Channels 02 and 03: the notes scope and the tape library, each on its own tube. */
+/** Channel 02: the notes scope, on amber glass. */
 export default async function SectionPage({ params }: SectionPageProps) {
   const { section } = await params;
   if (!isContentSection(section)) notFound();
-
-  if (section === "books") {
-    return (
-      <TubeScreen channel="03" label="Tapes" glass="blue">
-        <TapeLibrary
-          books={getEntries("books").map(({ href, title, author, bookYear, readingStatus, summary }) => ({
-            href,
-            title,
-            author,
-            bookYear,
-            readingStatus,
-            summary,
-          }))}
-        />
-      </TubeScreen>
-    );
-  }
 
   return (
     <TubeScreen channel="02" label="Notes" glass="amber">

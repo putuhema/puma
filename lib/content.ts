@@ -15,8 +15,6 @@ const contentRoot = path.join(process.cwd(), "content");
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
-export type ReadingStatus = "reading" | "finished" | "queued";
-
 export type EntryHeading = {
   depth: 2 | 3;
   id: string;
@@ -30,9 +28,6 @@ export type EntryMetadata = {
   updatedAt?: string;
   tags: string[];
   draft: boolean;
-  author?: string;
-  bookYear?: number;
-  readingStatus?: ReadingStatus;
   externalUrl?: string;
 };
 
@@ -64,11 +59,7 @@ function assertDate(
   }
 }
 
-function parseMetadata(
-  data: Record<string, unknown>,
-  section: ContentSection,
-  filePath: string,
-): EntryMetadata {
+function parseMetadata(data: Record<string, unknown>, filePath: string): EntryMetadata {
   assertString(data.title, "title", filePath);
   assertString(data.summary, "summary", filePath);
   assertDate(data.publishedAt, "publishedAt", filePath);
@@ -97,18 +88,6 @@ function parseMetadata(
     }
   }
 
-  if (section === "books") {
-    assertString(data.author, "author", filePath);
-    if (!Number.isInteger(data.bookYear)) {
-      throw new Error(`${filePath}: frontmatter field "bookYear" must be an integer.`);
-    }
-    if (!(["reading", "finished", "queued"] as const).includes(data.readingStatus as ReadingStatus)) {
-      throw new Error(
-        `${filePath}: frontmatter field "readingStatus" must be reading, finished, or queued.`,
-      );
-    }
-  }
-
   return {
     title: data.title,
     summary: data.summary,
@@ -116,9 +95,6 @@ function parseMetadata(
     updatedAt: data.updatedAt as string | undefined,
     tags: (data.tags as string[] | undefined) ?? [],
     draft: (data.draft as boolean | undefined) ?? false,
-    author: data.author as string | undefined,
-    bookYear: data.bookYear as number | undefined,
-    readingStatus: data.readingStatus as ReadingStatus | undefined,
     externalUrl: data.externalUrl as string | undefined,
   };
 }
@@ -158,7 +134,7 @@ function readEntry(section: ContentSection, slug: string): ContentEntry | null {
 
   const source = fs.readFileSync(filePath, "utf8");
   const { data, content } = matter(source);
-  const metadata = parseMetadata(data, section, filePath);
+  const metadata = parseMetadata(data, filePath);
 
   return {
     ...metadata,
@@ -198,17 +174,9 @@ export function getEntries(section?: ContentSection): ContentEntry[] {
     });
 }
 
-/** What Mr. P knows about: every published note and tape, trimmed down. */
+/** What Mr. P knows about: every published note, trimmed down. */
 export function getArchive(): Archive {
   return {
-    books: getEntries("books").map(({ href, title, author, bookYear, readingStatus, summary }) => ({
-      href,
-      title,
-      author,
-      bookYear,
-      readingStatus,
-      summary,
-    })),
     notes: getEntries("notes").map(({ href, slug, title, publishedAt, summary }) => ({
       href,
       slug,

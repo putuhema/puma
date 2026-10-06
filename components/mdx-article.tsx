@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { BookEntry } from "@/components/book-entry";
 import { Leader } from "@/components/leader";
 import { formatEntryDate, type ContentEntry } from "@/lib/content";
 import { sectionDetails } from "@/lib/site";
@@ -18,7 +17,7 @@ export function MdxArticle({ children, entry }: { children: ReactNode; entry: Co
       <div className="sticky top-[calc(env(safe-area-inset-top)+3.5rem)] z-10 bg-background pt-3 lg:pt-5">
         <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground">
           <Link href={`/${entry.section}`} className="outline-none hover:text-foreground focus-visible:text-foreground">
-            ◂ Back to {section.title === "Books" ? "Tapes" : section.title}{" "}
+            ◂ Back to {section.title}{" "}
             <span className="hidden sm:inline">(Esc)</span>
           </Link>
           <span className="truncate">{entry.href}</span>
@@ -39,17 +38,7 @@ export function MdxArticle({ children, entry }: { children: ReactNode; entry: Co
           </h1>
           <p className="mt-5 max-w-2xl text-base/7 text-muted-foreground sm:text-lg/8">{entry.summary}</p>
 
-          {entry.readingStatus && (
-            <p
-              aria-hidden="true"
-              className="absolute top-8 right-0 rotate-[-6deg] border-2 border-stamp px-2.5 py-1 font-display text-sm font-bold tracking-[0.14em] text-stamp uppercase sm:top-6"
-            >
-              {entry.readingStatus}
-            </p>
-          )}
-
           <dl className="mt-8 grid gap-x-12 sm:grid-cols-2">
-            {entry.section === "books" && <BookEntry entry={entry} />}
             <Leader label="Filed">{formatEntryDate(entry.publishedAt)}</Leader>
             {entry.updatedAt && <Leader label="Revised">{formatEntryDate(entry.updatedAt)}</Leader>}
             {entry.tags.length > 0 && (

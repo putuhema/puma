@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PUMA / FIELD STATION P-4 — Design System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;700&family=Silkscreen&family=VT323&display=swap" rel="stylesheet" />
+<style>
+  /* ───────────── TOKENS ───────────── */
+  :root {
+    /* Paper (the bureau): the sheet everything is printed on */
+    --paper: #f3f3ef;        /* photocopy bond */
+    --paper-2: #e7e7e1;      /* second-generation copy / highlighter grey */
+    --ink: #111111;          /* toner */
+    --graphite: #5d5d58;     /* pencil labels */
+    --rule: #c9c9c2;         /* hairlines, cut marks */
+
+    /* Tube (the instruments): screens mounted into the paper */
+    --tube: #0c0d0c;         /* powered-off CRT glass */
+    --osd: #1a2bd6;          /* VHS menu blue — THE primary accent */
+    --osd-ink: #f4f6ff;      /* OSD white */
+    --signal: #ff6a1f;       /* satellite-tracker amber — live / alerts only */
+    --redpen: #d4261c;       /* case-file red pen — annotations only, never UI */
+
+    --font-body: "IBM Plex Mono", ui-monospace, monospace;
+    --font-display: "IBM Plex Sans Condensed", sans-serif;
+    --font-osd: "Silkscreen", monospace;
+    --font-tube: "VT323", monospace;
+
+    --u: 8px;                /* base unit */
+    --hair: 1px solid var(--ink);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: #d9d9d3; }
+  body {
+    font: 14px/22px var(--font-body);
+    color: var(--ink);
+    padding: 48px 0 120px;
+  }
+  .board { width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+  .sheet {
+    background: var(--paper);
+    padding: 56px 64px 64px;
+    position: relative;
+    box-shadow: 0 1px 0 #bdbdb6, 0 24px 48px -32px rgba(0,0,0,.35);
+  }
+  /* cut marks / registration ticks on every sheet */
+  .sheet::before, .sheet::after {
+    content: "+"; position: absolute; font: 16px var(--font-body); color: var(--graphite);
+  }
+  .sheet::before { top: 14px; left: 18px; }
+  .sheet::after { bottom: 14px; right: 18px; }
+
+  .sheet-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: var(--hair); padding-bottom: 16px; margin-bottom: 40px;
+  }
+  .sheet-no { font: 700 64px/56px var(--font-display); letter-spacing: -0.02em; }
+  .sheet-title { font: 700 32px/36px var(--font-display); letter-spacing: -0.01em; text-transform: uppercase; }
+  .label { font: 11px/16px var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--graphite); }
+  .osd { font-family: var(--font-osd); letter-spacing: .02em; }
+  .margin-tag {
+    position: absolute; right: 18px; top: 50%; writing-mode: vertical-rl;
+    font: 11px var(--font-body); letter-spacing: .3em; color: var(--graphite);
+  }
+  .row { display: flex; gap: 32px; }
+  .col { display: flex; flex-direction: column; gap: 16px; }
+  .note { color: var(--graphite); max-width: 52ch; }
+  h3.k { font: 600 12px/16px var(--font-body); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 12px; }
+  .dot-plane {
+    background-image: radial-gradient(var(--rule) 1px, transparent 1.2px);
+    background-size: 24px 24px;
+  }
+
+  /* ───────────── COMPONENTS ───────────── */
+
+  /* Tube: a CRT screen mounted into the sheet */
+  .tube {
+    background: var(--osd); color: var(--osd-ink);
+    position: relative; overflow: hidden; border-radius: 18px / 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), inset 0 0 80px rgba(0,0,0,.45);
+  }
+  .tube::after { /* scanlines — live only inside tubes */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(to bottom, rgba(0,0,0,.14) 0 1px, transparent 1px 3px);
+    mix-blend-mode: multiply;
+  }
+  .tube.black { background: var(--tube); color: #e9e9e2; }
+  .tube.signal { background: #140a05; color: var(--signal); }
+
+  /* OSD inverted selection */
+  .inv { background: var(--osd-ink); color: var(--osd); padding: 0 6px; }
+  .inv-ink { background: var(--ink); color: var(--paper); padding: 0 6px; }
+
+  /* Segmented tracking bar (VHS) */
+  .ticks { display: flex; gap: 3px; height: 14px; }
+  .ticks i { width: 6px; background: currentColor; }
+  .ticks i.off { background: transparent; border-bottom: 2px solid currentColor; height: 8px; align-self: center; }
+
+  /* Soft-key bar (Soyuz MFD) */
+  .softkeys { display: flex; gap: 6px; padding: 8px; background: var(--paper); border-top: var(--hair); }
+  .softkey {
+    flex: 1; height: 36px; display: flex; align-items: center; gap: 8px;
+    border: var(--hair); padding: 0 10px; font: 500 13px var(--font-body); text-transform: uppercase;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .softkey b { font: 11px var(--font-osd); color: var(--graphite); }
+  .softkey.on { background: var(--ink); color: var(--paper); box-shadow: none; transform: translate(2px,2px); }
+  .softkey.on b { color: var(--paper); opacity: .7; }
+
+  /* Status strip (MFD header cells) */
+  .status { display: flex; border: var(--hair); }
+  .status > div { padding: 6px 12px; border-right: var(--hair); display: flex; flex-direction: column; }
+  .status > div:last-child { border-right: 0; }
+  .status .v { font: 500 15px/20px var(--font-body); }
+  .status .grow { flex: 1; }
+
+  /* Annunciator list (■ БДУС1-2   K15) */
+  .ann { display: flex; flex-direction: column; }
+  .ann-row { display: flex; align-items: center; height: 30px; gap: 12px; font: 500 14px var(--font-body); text-transform: uppercase; }
+  .ann-row .lamp { width: 14px; height: 10px; background: var(--ink); flex-shrink: 0; }
+  .ann-row .lamp.hollow { background: transparent; border: 1.5px solid var(--ink); }
+  .ann-row .lamp.live { background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+  .ann-row .t { flex: 1; }
+  .ann-row .code { width: 48px; text-align: right; color: var(--graphite); flex-shrink: 0; }
+  .ann-row .pre { width: 44px; text-align: right; color: var(--graphite); flex-shrink: 0; font-size: 12px; }
+  .ann-row.sel { background: var(--ink); color: var(--paper); }
+  .ann-row.sel .code, .ann-row.sel .pre { color: var(--paper); }
+  .ann-row.sel .lamp { background: var(--paper); }
+
+  /* Redaction + red pen */
+  .redact { background: var(--ink); color: transparent; padding: 0 2px; }
+  .hl { background: var(--paper-2); padding: 0 3px; }
+  .pen-circle { position: relative; }
+  .pen-circle::after {
+    content: ""; position: absolute; inset: -6px -10px; border: 1.5px solid var(--redpen);
+    border-radius: 50%; transform: rotate(-3deg);
+  }
+  .pen-under { box-shadow: inset 0 -2px 0 var(--redpen); }
+  .stamp {
+    display: inline-block; border: 2px solid var(--redpen); color: var(--redpen);
+    font: 700 13px/1 var(--font-display); letter-spacing: .14em; padding: 6px 10px; transform: rotate(-4deg);
+  }
+
+  /* Leader rows (readouts) */
+  .lead { display: flex; gap: 8px; align-items: baseline; }
+  .lead .fill { flex: 1; border-bottom: 1px dotted var(--graphite); transform: translateY(-4px); }
+
+  /* Tree index (├─) */
+  pre.tree { font: 13px/22px var(--font-body); }
+
+  /* hypertext node */
+  .node { position: absolute; width: 168px; border: var(--hair); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
+  .node .bar { background: var(--ink); color: var(--paper); font: 500 12px/22px var(--font-body); padding: 0 8px; display: flex; gap: 6px; }
+  .node .body { padding: 8px; font-size: 12px; line-height: 17px; color: var(--graphite); }
+  .node.hot { box-shadow: 3px 3px 0 var(--osd); border-color: var(--osd); }
+  .node.hot .bar { background: var(--osd); }
+  .edge-label { position: absolute; font: 11px var(--font-body); background: var(--paper); padding: 0 3px; }
+
+  /* swatches */
+  .sw { width: 200px; display: flex; flex-direction: column; gap: 8px; }
+  .sw .chip { height: 120px; border: var(--hair); position: relative; }
+  .sw .name { font: 600 13px var(--font-body); text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="board">
+
+<!-- ═════════════ 00 COVER ═════════════ -->
+<section class="sheet" style="min-height: 820px; display:flex; flex-direction:column;">
+  <div style="display:flex; justify-content:space-between;">
+    <div class="label">Research department<br/>Design bureau of Puma</div>
+    <div class="label" style="text-align:right">Design file<br/>FS-P4 / rev.01 / 2026-10-05</div>
+  </div>
+
+  <div style="flex:1; display:flex; align-items:center; gap:64px; padding-top:40px;">
+    <div style="flex:1">
+      <div class="label" style="margin-bottom:16px">System design · not implemented</div>
+      <div style="font: 700 200px/160px var(--font-display); letter-spacing:-0.04em;">P-4</div>
+      <div style="font: 700 56px/56px var(--font-display); letter-spacing:-0.02em; text-transform:uppercase; margin-top:24px; max-width:900px;">
+        Field Station<br/>for one curious web developer
+      </div>
+      <p class="note" style="margin-top:24px; font-size:15px; line-height:24px;">
+        The portfolio is a piece of declassified equipment. A paper operations manual
+        with CRT instruments mounted into it. You don't scroll a website, you
+        <span class="pen-under">operate the station</span>: soft keys 1–9, readouts, case files, tapes.
+      </p>
+    </div>
+
+    <!-- reticle crop of the docking display -->
+    <div class="tube black" style="width:420px; height:420px; display:flex; align-items:center; justify-content:center;">
+      <svg width="360" height="360" viewBox="0 0 360 360" fill="none" stroke="#e9e9e2" stroke-width="1.5">
+        <circle cx="180" cy="180" r="34"/><circle cx="180" cy="180" r="18"/>
+        <line x1="40" y1="320" x2="320" y2="40"/>
+        <path d="M230 120 h110 M230 240 h110 M290 100 v160" stroke-dasharray="8 6"/>
+        <text x="282" y="124" fill="#e9e9e2" stroke="none" font-family="VT323" font-size="22">✱</text>
+        <text x="300" y="214" fill="#e9e9e2" stroke="none" font-family="VT323" font-size="22">✱</text>
+        <text x="20" y="40" fill="#e9e9e2" stroke="none" font-family="VT323" font-size="24">Ф44 ПРИЧАЛ   PUMA</text>
+        <text x="20" y="64" fill="#e9e9e2" stroke="none" font-family="VT323" font-size="24">АВТ · ЗАХВАТ</text>
+        <text x="20" y="330" fill="#e9e9e2" stroke="none" font-family="VT323" font-size="24">ρ=43,6   ρ̇= 0,1</text>
+      </svg>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:48px; border-top: var(--hair); padding-top:16px;">
+    <div class="label">01 Principles</div><div class="label">02 Colour</div><div class="label">03 Type</div>
+    <div class="label">04 Surfaces</div><div class="label">05 Components</div><div class="label">06 Screens</div>
+    <div class="label">07 Motion + Sound</div>
+  </div>
+  <span class="margin-tag">MO-02 · A-1</span>
+</section>
+
+<!-- ═════════════ 01 PRINCIPLES ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet</div><div class="sheet-no">01</div></div><div class="sheet-title">Operating principles</div></div>
+
+  <div class="row" style="gap:48px; align-items:flex-start">
+    <div class="col" style="flex:1">
+      <div class="label">Reference → what we take</div>
+      <div class="lead"><span>Soyuz docking MFD</span><span class="fill"></span><span>Soft keys, status strip, annunciator lamps</span></div>
+      <div class="lead"><span>VHS / VCR menu</span><span class="fill"></span><span>Blue tube, inverted selection, tick bars</span></div>
+      <div class="lead"><span>Storyspace hypertext</span><span class="fill"></span><span>Notes as linked node windows</span></div>
+      <div class="lead"><span>Component taxonomy tree</span><span class="fill"></span><span>Sitemap &amp; tags as ├─ trees</span></div>
+      <div class="lead"><span>FBC incident report</span><span class="fill"></span><span>Case files, redaction, red pen</span></div>
+      <div class="lead"><span>Satellite tracker CBK-01</span><span class="fill"></span><span>Amber grids, trajectories, ETA</span></div>
+      <div class="lead"><span>CRT game map</span><span class="fill"></span><span>Bulged glass, 404 "signal lost"</span></div>
+      <div class="lead"><span>1970s block-planning terminal</span><span class="fill"></span><span>Scale/size diagrams, score tables</span></div>
+      <div class="lead"><span>A3-D technical sheet</span><span class="fill"></span><span>Big sheet numbers, cut marks, air</span></div>
+    </div>
+
+    <div class="col" style="width:520px; gap:24px">
+      <div><h3 class="k">1 · Paper holds, tubes speak</h3><p class="note">Two materials only. Paper is static, editorial, mostly white space. Tubes are the only places that glow, animate, or scanline. Never put a tube inside a tube.</p></div>
+      <div><h3 class="k">2 · Everything is operable from the keypad</h3><p class="note">Every page has a soft-key bar. Number keys 1–9 always work. The mouse is optional; the fun is pressing keys.</p></div>
+      <div><h3 class="k">3 · One blue, used like a cursor</h3><p class="note">OSD blue marks "you are here" and the live screen. Amber means something is live or moving. Red pen belongs to the archivist, never to buttons.</p></div>
+      <div><h3 class="k">4 · Labelled like equipment</h3><p class="note">Things get codes (K15, Д7, P5), sheet numbers and margin tags. Copy is dry and procedural, with jokes hidden in the codes.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 02 COLOUR ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet</div><div class="sheet-no">02</div></div><div class="sheet-title">Colour · two materials</div></div>
+
+  <div class="label" style="margin-bottom:16px">Paper — the bureau</div>
+  <div class="row" style="gap:24px; margin-bottom:40px">
+    <div class="sw"><div class="chip" style="background:#f3f3ef"></div><div class="name">Bond</div><div class="label">#F3F3EF · ground</div></div>
+    <div class="sw"><div class="chip" style="background:#e7e7e1"></div><div class="name">Copy grey</div><div class="label">#E7E7E1 · highlight, sunken</div></div>
+    <div class="sw"><div class="chip" style="background:#c9c9c2"></div><div class="name">Rule</div><div class="label">#C9C9C2 · hairline, dots</div></div>
+    <div class="sw"><div class="chip" style="background:#5d5d58"></div><div class="name">Graphite</div><div class="label">#5D5D58 · labels</div></div>
+    <div class="sw"><div class="chip" style="background:#111"></div><div class="name">Toner</div><div class="label">#111111 · text, keys</div></div>
+  </div>
+
+  <div class="label" style="margin-bottom:16px">Tube — the instruments</div>
+  <div class="row" style="gap:24px; align-items:flex-end">
+    <div class="sw" style="width:424px"><div class="chip tube" style="height:200px; border:0; padding:20px; font: 28px var(--font-osd)">OSD BLUE<br/><span class="inv">PRIMARY</span></div><div class="label">#1A2BD6 · the one accent · 70% of all colour</div></div>
+    <div class="sw"><div class="chip" style="background:#0c0d0c; border:0"></div><div class="name">Glass</div><div class="label">#0C0D0C · black tubes</div></div>
+    <div class="sw"><div class="chip" style="background:#ff6a1f; border:0"></div><div class="name">Signal amber</div><div class="label">#FF6A1F · live / moving · 5%</div></div>
+    <div class="sw"><div class="chip" style="background:var(--paper); display:flex; align-items:center; justify-content:center"><span class="stamp">CONTAINED: NO</span></div><div class="name">Red pen</div><div class="label">#D4261C · annotation only</div></div>
+  </div>
+  <p class="note" style="margin-top:32px">Ratio rule: paper ~80% of any viewport, tubes ~15%, amber + red pen &lt;5% combined. Dark mode = "night shift": the paper flips to glass #0C0D0C, toner to #E9E9E2, blue stays.</p>
+</section>
+
+<!-- ═════════════ 03 TYPE ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet</div><div class="sheet-no">03</div></div><div class="sheet-title">Type · four voices</div></div>
+
+  <div class="col" style="gap:0">
+    <div class="row" style="align-items:baseline; border-bottom:1px solid var(--rule); padding:16px 0">
+      <div class="label" style="width:220px; flex-shrink:0">Display<br/>Plex Sans Condensed 700<br/>120 / 64 / 32 · −0.03em</div>
+      <div style="font:700 120px/104px var(--font-display); letter-spacing:-0.03em">A3-D Puma</div>
+    </div>
+    <div class="row" style="align-items:baseline; border-bottom:1px solid var(--rule); padding:16px 0">
+      <div class="label" style="width:220px; flex-shrink:0">Body / data<br/>IBM Plex Mono 400–600<br/>15 / 14 / 11 caps</div>
+      <div style="font:400 15px/24px var(--font-body); max-width:62ch">Time is not one universal river. It passes differently depending on speed, gravity, and where an observer happens to stand. <span class="hl">Rovelli makes this disorientation feel intimate.</span></div>
+    </div>
+    <div class="row" style="align-items:center; border-bottom:1px solid var(--rule); padding:16px 0">
+      <div class="label" style="width:220px; flex-shrink:0">OSD<br/>Silkscreen 400<br/>inside blue tubes only</div>
+      <div class="tube" style="padding:16px 24px; font: 26px/34px var(--font-osd)">SELECT WITH (▲▼) AND <span class="inv">OK</span></div>
+    </div>
+    <div class="row" style="align-items:center; padding:16px 0">
+      <div class="label" style="width:220px; flex-shrink:0">Readout<br/>VT323 400<br/>black / amber tubes</div>
+      <div class="tube signal" style="padding:12px 24px; font: 40px/40px var(--font-tube)">ESTIMATED ARRIVAL 02:18:17</div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px">Jacquard 24 retires. Silkscreen and Plex Mono stay (already loaded). Display and readout faces are new.</p>
+</section>
+
+<!-- ═════════════ 04 SURFACES ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet</div><div class="sheet-no">04</div></div><div class="sheet-title">Grid &amp; surfaces</div></div>
+  <div class="row" style="gap:48px">
+    <div class="col" style="flex:1">
+      <div style="height:300px; border: var(--hair); position:relative; display:flex; gap:24px; padding:24px;" class="dot-plane">
+        <div style="flex:1; border:1px dashed var(--graphite)"></div><div style="flex:1; border:1px dashed var(--graphite)"></div>
+        <div style="flex:1; border:1px dashed var(--graphite)"></div><div style="flex:1; border:1px dashed var(--graphite)"></div>
+        <div style="flex:1; border:1px dashed var(--graphite)"></div><div style="flex:1; border:1px dashed var(--graphite)"></div>
+        <div style="flex:1; border:1px dashed var(--graphite)"></div><div style="flex:1; border:1px dashed var(--graphite)"></div>
+        <div style="flex:1; border:1px dashed var(--graphite)"></div><div style="flex:1; border:1px dashed var(--graphite)"></div>
+        <div style="flex:1; border:1px dashed var(--graphite)"></div><div style="flex:1; border:1px dashed var(--graphite)"></div>
+        <span class="label" style="position:absolute; bottom:-24px; left:0">12 col · 24 gutter · 64 margin · 8px unit · 24px dot plane</span>
+      </div>
+    </div>
+    <div class="col" style="width:520px; gap:20px">
+      <div class="lead"><b>Sheet</b><span class="fill"></span><span>paper, cut marks, sheet no., margin tag</span></div>
+      <div class="lead"><b>Plane</b><span class="fill"></span><span>24px dot grid for spatial pages</span></div>
+      <div class="lead"><b>Tube</b><span class="fill"></span><span>18/14 radius, inner vignette, scanlines</span></div>
+      <div class="lead"><b>Key</b><span class="fill"></span><span>1px toner, 2px hard offset shadow</span></div>
+      <div class="lead"><b>Window</b><span class="fill"></span><span>title bar in toner, 3px hard shadow</span></div>
+      <p class="note">No blur shadows, no gradients outside the tube vignette. Corners are 0 except tubes. Depth comes from hard offsets, like a physical key travelling 2px.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 05 COMPONENTS ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet</div><div class="sheet-no">05</div></div><div class="sheet-title">Components</div></div>
+
+  <div class="row" style="gap:48px; align-items:flex-start">
+    <div class="col" style="flex:1; gap:40px">
+      <div>
+        <div class="label" style="margin-bottom:12px">C1 · Status strip</div>
+        <div class="status">
+          <div><span class="label">Station</span><span class="v">P-4 ⌁ ONLINE</span></div>
+          <div><span class="label">Date</span><span class="v">05.10.26</span></div>
+          <div><span class="label">Local</span><span class="v">14:07:33 WITA</span></div>
+          <div class="grow"><span class="label">Position</span><span class="v">S 8.65 · E 115.21 · Bali</span></div>
+          <div><span class="label">Uptime</span><span class="v">06Y 11M</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:12px">C2 · Soft-key bar (always docked bottom)</div>
+        <div class="softkeys" style="border:var(--hair)">
+          <div class="softkey on"><b>1</b>Station</div>
+          <div class="softkey"><b>2</b>Notes</div>
+          <div class="softkey"><b>3</b>Tapes</div>
+          <div class="softkey"><b>4</b>Work</div>
+          <div class="softkey" style="flex:.6"><b>9</b>↑DIR</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:12px">C3 · Annunciator list</div>
+        <div class="ann" style="max-width:520px">
+          <div class="ann-row"><span class="pre"></span><span class="lamp live"></span><span class="t">Building · Field Station</span><span class="code">K15</span></div>
+          <div class="ann-row sel"><span class="pre">▶</span><span class="lamp"></span><span class="t">Reading · The Order of Time</span><span class="code">Д7</span></div>
+          <div class="ann-row"><span class="pre">47м</span><span class="lamp"></span><span class="t">Next.js · React · Motion</span><span class="code">C11</span></div>
+          <div class="ann-row"><span class="pre">ВКЛ</span><span class="lamp hollow"></span><span class="t">Open to collaboration</span><span class="code">P5</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:12px">C4 · Tree index</div>
+<pre class="tree">Station ─┬─ Notes ──┬─ Interaction ─┬─ hover
+         │          │               └─ sound
+         │          └─ Web ──────────── next.js
+         ├─ Tapes ──── SP · EP · SLP
+         └─ Work ────┬─ shipped
+                     └─ <span style="color:var(--osd)">in progress ◀</span></pre>
+      </div>
+    </div>
+
+    <div class="col" style="width:520px; gap:40px">
+      <div>
+        <div class="label" style="margin-bottom:12px">C5 · OSD menu (tube)</div>
+        <div class="tube" style="padding:24px 28px; font: 22px/32px var(--font-osd)">
+          <div class="inv" style="text-align:center">TAPE MENU</div>
+          <div style="margin-top:12px">TRACKING</div>
+          <div class="ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div>
+          <div style="margin-top:12px"><span class="inv">SP</span> EP SLP</div>
+          <div style="margin-top:8px; opacity:.9">0:22:37</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:12px">C6 · Case-file block</div>
+        <div style="border-top: var(--hair); padding-top:12px; font-size:13px; line-height:21px">
+          <div class="lead"><span class="label">Type</span><span class="fill"></span><span>External, <span class="hl">ALTERED WORLD EVENT</span></span></div>
+          <div class="lead"><span class="label">Contained</span><span class="fill"></span><span class="pen-circle">NO</span></div>
+          <div class="lead"><span class="label">Agent</span><span class="fill"></span><span>PUMA-<span class="redact">0167</span></span></div>
+          <p style="margin-top:12px">Witnesses described it as <span class="hl">"a website that feels like a machine"</span>. It hummed <span class="redact">approximately ten</span> feet from the keyboard.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:12px">C7 · Hypertext node</div>
+        <div style="position:relative; height:150px" class="dot-plane">
+          <div class="node" style="left:0; top:10px"><div class="bar">¶ Sound on hover</div><div class="body">Small clicks make keys feel real…</div></div>
+          <div class="node hot" style="left:300px; top:50px"><div class="bar">¶ Haptic web</div><div class="body">What a 2px key travel teaches.</div></div>
+          <svg style="position:absolute; inset:0" width="520" height="150"><path d="M168 48 C 230 48, 240 90, 296 90" stroke="#111" fill="none" stroke-width="1.2"/><path d="M290 85 l7 5 -8 3" stroke="#111" fill="none"/></svg>
+          <span class="edge-label" style="left:204px; top:52px">why click?</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 06A SCREEN · STATION (HOME) ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet · screen</div><div class="sheet-no">06·A</div></div><div class="sheet-title">Key 1 · The Station (home)</div></div>
+
+  <div style="border: var(--hair); background:var(--paper); display:flex; flex-direction:column; height:780px;">
+    <div class="status" style="border-width:0 0 1px 0">
+      <div><span class="label">Station</span><span class="v">P-4 ⌁ ONLINE</span></div>
+      <div><span class="label">Local</span><span class="v">14:07:33 WITA</span></div>
+      <div class="grow"><span class="label">Position</span><span class="v">S 8.65 · E 115.21</span></div>
+      <div><span class="label">Visitor</span><span class="v">#000412</span></div>
+      <div><span class="label">Sound</span><span class="v">■ ON</span></div>
+    </div>
+
+    <div style="flex:1; display:flex; padding:40px; gap:48px">
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between">
+        <div>
+          <div class="label">Ф01 Station · operator on duty</div>
+          <div style="font:700 168px/140px var(--font-display); letter-spacing:-0.04em; margin-top:16px">PUMA</div>
+          <div style="font:700 36px/40px var(--font-display); text-transform:uppercase; letter-spacing:-0.01em; margin-top:16px; max-width:640px">A web developer who loves to build stuff. Mostly instruments.</div>
+        </div>
+        <div class="row" style="gap:16px; align-items:center">
+          <div class="softkey" style="flex:0 0 auto; height:44px; padding:0 16px">✉ Transmit message</div>
+          <div class="softkey" style="flex:0 0 auto; height:44px; padding:0 16px">RSS feed</div>
+          <span class="label" style="margin-left:8px">or press <b style="color:var(--ink)">T</b></span>
+        </div>
+      </div>
+
+      <div style="width:480px; display:flex; flex-direction:column; gap:24px">
+        <div class="tube black" style="height:260px; padding:16px 20px; font: 22px/26px var(--font-tube)">
+          <div style="display:flex; justify-content:space-between"><span>Ф44 ПРИЧАЛ</span><span>ТМ=14.07.33</span></div>
+          <svg width="440" height="200" viewBox="0 0 440 200" fill="none" stroke="#e9e9e2" stroke-width="1.4" style="position:absolute; left:20px; top:48px">
+            <circle cx="150" cy="100" r="26"/><circle cx="150" cy="100" r="12"/><line x1="40" y1="190" x2="270" y2="10"/>
+            <path d="M300 50 h120 M300 150 h120 M380 30 v150" stroke-dasharray="7 5"/>
+            <text x="0" y="190" fill="#e9e9e2" stroke="none" font-family="VT323" font-size="20">ρ=43,6  cursor docking…</text>
+          </svg>
+        </div>
+        <div class="ann">
+          <div class="label" style="margin-bottom:8px">Systems</div>
+          <div class="ann-row"><span class="pre"></span><span class="lamp live"></span><span class="t">Building · Field Station</span><span class="code">K15</span></div>
+          <div class="ann-row sel"><span class="pre">▶</span><span class="lamp"></span><span class="t">Reading · Order of Time</span><span class="code">Д7</span></div>
+          <div class="ann-row"><span class="pre">4 ПР</span><span class="lamp"></span><span class="t">Projects on file: 4</span><span class="code">Д13</span></div>
+          <div class="ann-row"><span class="pre">ВКЛ</span><span class="lamp hollow"></span><span class="t">Open to work</span><span class="code">P5</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="softkeys">
+      <div class="softkey on"><b>1</b>Station</div><div class="softkey"><b>2</b>Notes</div><div class="softkey"><b>3</b>Tapes</div>
+      <div class="softkey"><b>4</b>Work</div><div class="softkey" style="flex:.6"><b>9</b>↑DIR</div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px">Fun bit: the black tube is a real docking display. The reticle follows the cursor; when the mouse rests on a soft key it "captures" (ЗАХВАТ) with a click and ρ counts to 0.</p>
+</section>
+
+<!-- ═════════════ 06B SCREEN · NOTES ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet · screen</div><div class="sheet-no">06·B</div></div><div class="sheet-title">Key 2 · Notes as hypertext</div></div>
+
+  <div style="border:var(--hair); height:640px; position:relative; overflow:hidden" class="dot-plane">
+    <div class="node" style="left:520px; top:40px"><div class="bar">¶ A living notebook</div><div class="body">Why this site is a notebook, not a portfolio.</div></div>
+    <div class="node hot" style="left:180px; top:150px"><div class="bar">¶ Sound on hover</div><div class="body">Tiny clicks change how keys feel.</div></div>
+    <div class="node" style="left:860px; top:170px"><div class="bar">¶ Split-flap text</div><div class="body">45ms per glyph, left to right.</div></div>
+    <div class="node" style="left:420px; top:330px"><div class="bar">¶ Reduced motion</div><div class="body">The station still works with the power low.</div></div>
+    <div class="node" style="left:80px; top:420px"><div class="bar">¶ Why mono?</div><div class="body">Every char gets equal rent.</div></div>
+    <div class="node" style="left:900px; top:420px"><div class="bar">¶ References</div><div class="body">Storyspace, Soyuz, VCRs.</div></div>
+    <svg style="position:absolute; inset:0" width="1312" height="640" fill="none" stroke="#111" stroke-width="1.2">
+      <path d="M520 80 C 420 80, 400 170, 352 170"/><path d="M688 80 C 780 80, 800 190, 858 190"/>
+      <path d="M264 230 C 264 300, 380 360, 418 360"/><path d="M944 250 C 944 330, 960 380, 984 418"/>
+      <path d="M200 230 C 160 300, 150 360, 164 418"/><path d="M588 410 C 700 470, 820 470, 898 450"/>
+    </svg>
+    <span class="edge-label" style="left:410px; top:110px">why click?</span>
+    <span class="edge-label" style="left:770px; top:120px">ch-ch-changes</span>
+    <span class="edge-label" style="left:290px; top:300px">power low</span>
+    <span class="edge-label" style="left:720px; top:450px">refs</span>
+
+    <div style="position:absolute; right:24px; top:24px; width:240px; background:var(--paper); border:var(--hair); padding:12px">
+      <div class="label">View</div>
+      <div style="display:flex; gap:6px; margin-top:8px"><div class="softkey on" style="height:30px"><b>G</b>Graph</div><div class="softkey" style="height:30px"><b>L</b>List</div></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px">Notes float on the dot plane like Storyspace windows; edges are labelled with the sentence that links them. Press <b>L</b> to collapse the same data into a ├─ tree index for scanning.</p>
+</section>
+
+<!-- ═════════════ 06C SCREEN · TAPES (BOOKS) ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet · screen</div><div class="sheet-no">06·C</div></div><div class="sheet-title">Key 3 · Books as VHS tapes</div></div>
+
+  <div class="row" style="gap:48px; align-items:flex-start">
+    <div class="tube" style="width:640px; height:600px; padding:32px 40px; font: 24px/34px var(--font-osd); flex-shrink:0">
+      <div class="inv" style="text-align:center; font-size:26px; line-height:40px">TAPE LIBRARY<br/>READING &amp; ELEMENTS</div>
+      <div style="margin-top:24px"><span class="inv">▶ THE ORDER OF TIME</span></div>
+      <div style="font-size:18px; opacity:.85">ROVELLI · 2017 · FINISHED</div>
+      <div style="margin-top:16px">TRACKING</div>
+      <div class="ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div style="margin-top:16px">SP <span class="inv">EP</span> SLP</div>
+      <div style="margin-top:20px">■ GÖDEL, ESCHER, BACH</div>
+      <div class="ticks"><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div>
+      <div style="position:absolute; left:40px; right:40px; bottom:28px; font-size:18px; line-height:26px">SELECT WITH (▲▼) AND <span class="inv">OK</span><br/>PRESS (3) TO EJECT</div>
+    </div>
+
+    <div class="col" style="flex:1; gap:24px">
+      <h3 class="k">Mapping</h3>
+      <div class="lead"><span>Tracking bar</span><span class="fill"></span><span>pages read</span></div>
+      <div class="lead"><span>SP</span><span class="fill"></span><span>skimmed</span></div>
+      <div class="lead"><span>EP</span><span class="fill"></span><span>read properly</span></div>
+      <div class="lead"><span>SLP</span><span class="fill"></span><span>slow re-read, margin notes</span></div>
+      <div class="lead"><span>PAL / SECAM / NTSC</span><span class="fill"></span><span>language read in</span></div>
+      <div class="lead"><span>Counter 0:22:37</span><span class="fill"></span><span>reading time</span></div>
+      <p class="note">Opening a tape "plays" it: the tube rolls (vertical hold glitch, 180ms), then the review is shown on paper underneath with the OSD shrinking to a corner like a VCR clock.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 06D SCREEN · WORK ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet · screen</div><div class="sheet-no">06·D</div></div><div class="sheet-title">Key 4 · Work as case files</div></div>
+
+  <div class="row" style="gap:48px; align-items:flex-start">
+    <!-- case file -->
+    <div style="flex:1; border:var(--hair); padding:32px; position:relative; background:#f7f7f3">
+      <div style="display:flex; justify-content:space-between"><div class="label">Research department<br/>Design bureau of Puma</div><div class="label" style="text-align:right">Project case file<br/>PRJ-2026-004</div></div>
+      <div style="font:700 40px/44px var(--font-display); text-transform:uppercase; margin-top:40px; border-bottom:var(--hair); padding-bottom:8px">Field Station P-4</div>
+      <div class="row" style="gap:40px; margin-top:16px; font-size:13px">
+        <div class="col" style="flex:1; gap:4px">
+          <div class="lead"><span class="label">Type</span><span class="fill"></span><span class="hl">Personal site</span></div>
+          <div class="lead"><span class="label">Role</span><span class="fill"></span><b>Design + build</b></div>
+          <div class="lead"><span class="label">Stack</span><span class="fill"></span><span>Next.js · Motion</span></div>
+        </div>
+        <div class="col" style="flex:1; gap:4px">
+          <div class="lead"><span class="label">Shipped</span><span class="fill"></span><span class="pen-circle">NO</span></div>
+          <div class="lead"><span class="label">Fun had</span><span class="fill"></span><span class="pen-under">YES</span></div>
+          <div class="lead"><span class="label">Duration</span><span class="fill"></span><span>06 WK</span></div>
+        </div>
+      </div>
+      <p style="margin-top:20px; font-size:13px; line-height:21px">A portfolio built as <span class="hl">declassified equipment</span>: soft keys, CRT tubes and paper case files. Every key press <span class="redact">makes a small click</span>, on purpose.</p>
+      <div style="margin-top:20px; height:220px; background:#1b1b1a; display:flex; align-items:center; justify-content:center; color:#888; font:12px var(--font-body); position:relative">[ project plate · screenshot, grayscale, grain ]
+        <svg style="position:absolute; left:40px; top:30px" width="120" height="60" fill="none" stroke="#d4261c" stroke-width="2"><path d="M4 4 C 40 20, 80 40, 110 52"/><path d="M98 52 l12 0 -6 -10"/></svg>
+      </div>
+      <span class="stamp" style="position:absolute; right:36px; top:120px">IN PROGRESS</span>
+      <span class="margin-tag" style="right:-28px">A-1 · 2</span>
+    </div>
+
+    <!-- project index: block plan -->
+    <div class="col" style="width:440px; gap:20px">
+      <h3 class="k">Project index (block plan)</h3>
+      <div style="border:var(--hair); height:300px; position:relative" class="dot-plane">
+        <div style="position:absolute; left:16px; bottom:16px; width:40px; height:40px; border:1.5px solid var(--ink)"></div>
+        <div style="position:absolute; left:64px; bottom:16px; width:70px; height:70px; border:1.5px solid var(--ink)"></div>
+        <div style="position:absolute; left:142px; bottom:16px; width:120px; height:120px; background:var(--ink)"></div>
+        <div style="position:absolute; left:270px; bottom:16px; width:96px; height:96px; border:1.5px solid var(--ink)"></div>
+        <div style="position:absolute; left:16px; top:16px; width:180px; height:110px; border:1.5px dashed var(--ink)"></div>
+        <span class="label" style="position:absolute; left:154px; bottom:118px; color:var(--paper)">P-4</span>
+        <span class="label" style="position:absolute; left:20px; top:22px">NEXT · PLANNED</span>
+      </div>
+      <p class="note">The index is a 1970s planning terminal: each project is a block sized by effort and laid out in time order. Arrow keys step through; the active block fills with toner. Dashed blocks are planned.</p>
+      <div class="tube signal" style="padding:14px 18px; font:26px/28px var(--font-tube)">
+        TRACKING PRJ-004 · P-4<br/>EST. LAUNCH 02:18:17
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 06E SCREEN · 404 ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet · screen</div><div class="sheet-no">06·E</div></div><div class="sheet-title">404 · Signal lost</div></div>
+  <div class="row" style="gap:48px; align-items:center">
+    <div class="tube black" style="width:560px; height:420px; border-radius: 48px / 40px; display:flex; align-items:center; justify-content:center; font:32px var(--font-tube); flex-shrink:0">
+      <div style="text-align:center">CINDER CITY ✱<br/><br/>??? ▭<br/><br/><span style="font-size:22px">THIS SECTOR IS UNMAPPED</span></div>
+    </div>
+    <div class="col">
+      <div style="font:700 96px/88px var(--font-display); letter-spacing:-0.03em">NO SIGNAL</div>
+      <p class="note">A bulged CRT showing a hand-drawn map with a "???" where your page should be. Soft key <b>1</b> pulses: "Return to station".</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 07 MOTION + SOUND ═════════════ -->
+<section class="sheet">
+  <div class="sheet-head"><div><div class="label">Sheet</div><div class="sheet-no">07</div></div><div class="sheet-title">Motion + sound</div></div>
+  <div class="row" style="gap:48px">
+    <div class="col" style="flex:1; gap:6px">
+      <div class="lead"><b>Soft-key press</b><span class="fill"></span><span>translate 2px, shadow → 0 · 60ms · click</span></div>
+      <div class="lead"><b>Tube power-on</b><span class="fill"></span><span>scaleY 0.01 → 1, white line · 220ms · hum</span></div>
+      <div class="lead"><b>Page change</b><span class="fill"></span><span>old tube collapses to dot, new sheet slides 8px · 240ms</span></div>
+      <div class="lead"><b>Split-flap</b><span class="fill"></span><span>keep existing 45ms/glyph · status values</span></div>
+      <div class="lead"><b>OSD select</b><span class="fill"></span><span>instant inversion, no tween (it's a VCR)</span></div>
+      <div class="lead"><b>Tape play</b><span class="fill"></span><span>vertical-hold roll 180ms · motor whirr</span></div>
+      <div class="lead"><b>Red pen</b><span class="fill"></span><span>circles draw on (stroke-dashoffset) when scrolled in · 500ms</span></div>
+      <div class="lead"><b>Amber lamp</b><span class="fill"></span><span>1.6s blink, only one lamp at a time</span></div>
+    </div>
+    <div class="col" style="width:480px">
+      <p class="note">Reduced motion: tubes appear without collapse, no scanline flicker, no rolls; inversions and clicks remain. Sound stays opt-in via the status strip's ■ ON lamp.</p>
+      <div style="margin-top:16px"><span class="stamp">APPROVED FOR BUILD — PENDING</span></div>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

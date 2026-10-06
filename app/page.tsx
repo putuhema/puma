@@ -1,21 +1,32 @@
-import { RansomWord } from "@/components/ransom-word";
-import { PickSoundButton } from "@/components/pick-sound-button";
+import { TransmissionDesk } from "@/components/transmission-desk";
+import { getEntries } from "@/lib/content";
+import type { Archive } from "@/lib/transmission";
 
-export default function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const { ask } = await searchParams;
+
+  const archive: Archive = {
+    books: getEntries("books").map(({ href, title, author, bookYear, readingStatus, summary }) => ({
+      href,
+      title,
+      author,
+      bookYear,
+      readingStatus,
+      summary,
+    })),
+    notes: getEntries("notes").map(({ href, slug, title, publishedAt, summary }) => ({
+      href,
+      slug,
+      title,
+      publishedAt,
+      summary,
+    })),
+  };
+
   return (
-    <main className="flex w-full flex-1 items-center px-4 py-8 min-[360px]:px-5 sm:px-10 sm:py-12 lg:px-16">
-      <article className="mx-auto w-full max-w-3xl p-0 sm:p-11 lg:p-14">
-        <header>
-          <h1 className="sr-only">puma</h1>
-          <RansomWord />
-          <div className="mt-4 flex items-center gap-2">
-            <p className="text-start text-base text-muted-foreground">
-              /ˈpuː.mə/
-            </p>
-            <PickSoundButton />
-          </div>
-        </header>
-      </article>
-    </main>
+    <TransmissionDesk
+      archive={archive}
+      initialAsk={typeof ask === "string" ? ask.slice(0, 200) : undefined}
+    />
   );
 }

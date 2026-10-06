@@ -31,9 +31,24 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: var(--font-plex-sans);
-  --font-serif: var(--font-newsreader);
-  --font-heading: var(--font-newsreader);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-stamp: var(--stamp);
+  --color-rule: var(--rule);
+  --color-tube: var(--tube);
+  --color-tube-foreground: var(--tube-foreground);
+  --color-osd: var(--osd);
+  --color-osd-foreground: var(--osd-foreground);
+  --color-signal: var(--signal);
+  --color-amber-glass: var(--amber-glass);
+  --font-sans: var(--font-plex-mono);
+  --font-mono: var(--font-plex-mono);
+  --font-serif: var(--font-plex-mono);
+  --font-heading: var(--font-plex-condensed);
+  --font-display: var(--font-plex-condensed);
+  --font-label: var(--font-plex-mono);
+  --font-osd: var(--font-silkscreen);
+  --font-tube: var(--font-vt323);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -44,34 +59,321 @@
 }
 
 :root {
-  color-scheme: light;
-  --background: #f0e9db;
-  --foreground: oklch(0.225 0.014 72);
-  --card: oklch(0.978 0.009 92);
-  --card-foreground: oklch(0.225 0.014 72);
-  --popover: oklch(0.982 0.009 92);
-  --popover-foreground: oklch(0.225 0.014 72);
-  --primary: oklch(0.405 0.063 145);
-  --primary-foreground: oklch(0.975 0.01 92);
-  --secondary: oklch(0.928 0.018 90);
-  --secondary-foreground: oklch(0.29 0.021 72);
-  --muted: oklch(0.93 0.014 90);
-  --muted-foreground: oklch(0.49 0.022 72);
-  --accent: oklch(0.9 0.032 142);
-  --accent-foreground: oklch(0.285 0.044 145);
-  --destructive: oklch(0.55 0.19 28);
-  --border: oklch(0.855 0.018 88);
-  --input: oklch(0.855 0.018 88);
-  --ring: oklch(0.52 0.07 145);
-  --radius: 0.375rem;
-  --sidebar: oklch(0.945 0.014 92);
-  --sidebar-foreground: oklch(0.225 0.014 72);
-  --sidebar-primary: oklch(0.405 0.063 145);
-  --sidebar-primary-foreground: oklch(0.975 0.01 92);
-  --sidebar-accent: oklch(0.9 0.032 142);
-  --sidebar-accent-foreground: oklch(0.285 0.044 145);
-  --sidebar-border: oklch(0.855 0.018 88);
-  --sidebar-ring: oklch(0.52 0.07 145);
+  color-scheme: dark;
+  /* Field Station P-4 on tape: a VHS recording played back on a CRT. */
+  --background: #0a0c0b; /* unlit glass */
+  --surface: #111513;
+  --sunken: #1b201d;
+  --foreground: #e3ece4; /* phosphor white, a touch green */
+  --rule: #262c28; /* faint raster lines */
+  --stamp: #ff4b3e; /* record-light red */
+  --tube: #050605;
+  --tube-foreground: #e9e9e2;
+  --osd: #2337f0; /* VHS menu blue: the one accent */
+  --osd-foreground: #f4f6ff;
+  --signal: #ff7a2e; /* amber: live things only */
+  --amber-glass: #140904;
+  --card: #111513;
+  --card-foreground: #e3ece4;
+  --popover: #111513;
+  --popover-foreground: #e3ece4;
+  --primary: #2337f0;
+  --primary-foreground: #f4f6ff;
+  --secondary: #1b201d;
+  --secondary-foreground: #e3ece4;
+  --muted: #1b201d;
+  --muted-foreground: #9aa59c;
+  --accent: #1b201d;
+  --accent-foreground: #e3ece4;
+  --destructive: #ff4b3e;
+  --border: #4a544c;
+  --input: #4a544c;
+  --ring: #2337f0;
+  --radius: 0rem;
+  --sidebar: #0a0c0b;
+  --sidebar-foreground: #e3ece4;
+  --sidebar-primary: #2337f0;
+  --sidebar-primary-foreground: #f4f6ff;
+  --sidebar-accent: #1b201d;
+  --sidebar-accent-foreground: #e3ece4;
+  --sidebar-border: #4a544c;
+  --sidebar-ring: #2337f0;
+  /* Phosphor bloom plus the slight red/blue misregistration of a worn tape. */
+  --glow:
+    -0.04em 0 0 rgb(255 40 80 / 0.35),
+    0.04em 0 0 rgb(40 140 255 / 0.35),
+    0 0 0.45em rgb(227 236 228 / 0.28);
+}
+
+/* Equipment labelling: small mono caps with open tracking. */
+@utility type-label {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* On-screen-display lettering; only ever sits inside a blue tube. */
+@utility type-osd {
+  font-family: var(--font-silkscreen), monospace;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* A CRT set into the paper: rounded glass, vignette, and scanlines.
+   Pair with a glass colour: bg-tube (black) or bg-osd (VHS blue). */
+@utility tube {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.125rem / 0.875rem;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    inset 0 0 5rem rgb(0 0 0 / 0.45);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.14) 0 1px,
+      transparent 1px 3px
+    );
+  }
+}
+
+/* A physical key: hard offset shadow that the press travels into. */
+@utility key {
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  box-shadow: 2px 2px 0 var(--osd);
+  transition:
+    transform 60ms ease-out,
+    box-shadow 60ms ease-out;
+
+  &:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 var(--osd);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* The 24px dot plane behind spatial screens. */
+@utility dot-plane {
+  background-image: radial-gradient(var(--rule) 1px, transparent 1.2px);
+  background-size: 1.5rem 1.5rem;
+}
+
+/* A burst of snow when the channel changes. */
+@keyframes static-out {
+  0% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.85;
+    transform: translateY(-3%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(2%);
+  }
+}
+
+@utility tv-static {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.92 0 0 0 0 0.92 0 0 0 0 0.9 0 0 0 1.6 -0.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+@utility animate-static {
+  animation: static-out 380ms steps(6, end) forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 1ms;
+  }
+}
+
+/* Snow that never settles: a dead channel. */
+@keyframes snow {
+  to {
+    background-position: 160px 80px;
+  }
+}
+
+@utility animate-snow {
+  animation: snow 300ms steps(5, end) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* The archivist's rubber stamp landing on the page. */
+@keyframes stamp {
+  from {
+    opacity: 0;
+    scale: 1.8;
+  }
+  60% {
+    opacity: 1;
+    scale: 0.94;
+  }
+}
+
+@utility animate-stamp {
+  animation: stamp 420ms cubic-bezier(0.23, 1, 0.32, 1) 600ms backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Signal bars while a reply is being received. */
+@keyframes bars {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@utility animate-bars {
+  animation: bars 900ms steps(2, end) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Boot-log lines that type themselves out, one after another. */
+@keyframes type-line {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@utility animate-type {
+  animation: type-line 700ms steps(28, end) backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* A tube powering on: a bright line that opens into the picture. */
+@keyframes tube-on {
+  from {
+    transform: scaleY(0.01);
+    filter: brightness(3);
+  }
+  60% {
+    filter: brightness(1.4);
+  }
+}
+
+@utility animate-tube-on {
+  animation: tube-on 220ms cubic-bezier(0.23, 1, 0.32, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* The one live annunciator lamp. */
+@keyframes lamp {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@utility animate-lamp {
+  animation: lamp 1.6s steps(1, end) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* VHS tracking: a band of noisy, displaced picture rolling down the screen. */
+@keyframes tracking-roll {
+  from {
+    transform: translateY(-30vh);
+  }
+  to {
+    transform: translateY(130vh);
+  }
+}
+
+@utility animate-tracking {
+  animation: tracking-roll 9s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Mains hum on the tube: a barely-there brightness wobble. */
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 0.94;
+  }
+  50% {
+    opacity: 0.86;
+  }
+  52% {
+    opacity: 0.95;
+  }
+}
+
+@utility animate-flicker {
+  animation: flicker 4.2s steps(1, end) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* A horizontal tear when the picture changes, like a bad edit on tape. */
+@keyframes vhs-tear {
+  0%,
+  100% {
+    transform: none;
+    clip-path: none;
+  }
+  20% {
+    transform: translateX(-0.6rem) skewX(-6deg);
+    clip-path: inset(10% 0 55% 0);
+  }
+  40% {
+    transform: translateX(0.5rem);
+    clip-path: inset(60% 0 8% 0);
+  }
+  60% {
+    transform: translateX(-0.25rem);
+    clip-path: none;
+  }
+}
+
+@utility animate-tear {
+  animation: vhs-tear 280ms steps(5, end);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Phosphor text: bloom plus tape colour fringing. */
+@utility glow {
+  text-shadow: var(--glow);
 }
 
 @layer base {
@@ -86,6 +388,7 @@
 
   body {
     @apply bg-background text-foreground;
+    text-shadow: var(--glow);
   }
 
   button,
@@ -98,6 +401,6 @@
   }
 
   ::selection {
-    @apply bg-primary/20 text-foreground;
+    @apply bg-osd text-osd-foreground;
   }
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { AudioLinesIcon } from "lucide-react";
 import { useSound } from "@/components/sound-control";
-import { Button } from "@/components/ui/button";
 
 export function PickSoundButton() {
   const { muted } = useSound();
@@ -19,15 +17,13 @@ export function PickSoundButton() {
   return (
     <>
       <audio ref={pickSound} src="/pick.mp3" preload="auto" muted={muted} />
-      <Button
+      <button
         type="button"
-        size="icon"
-        variant="ghost"
-        aria-label="Play the pronunciation sound"
         onClick={playPickSound}
+        className="type-label touch-manipulation text-primary underline-offset-4 outline-none hover:underline focus-visible:underline active:opacity-70"
       >
-        <AudioLinesIcon aria-hidden="true" />
-      </Button>
+        /Play-sound
+      </button>
     </>
   );
 }

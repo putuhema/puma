@@ -1,19 +1,23 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { TubeScreen } from "@/components/tube-screen";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center px-6 text-center">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">Page 404</p>
-      <h1 className="mt-5 font-serif text-5xl tracking-[-0.05em] sm:text-7xl">
-        This page left no mark.
-      </h1>
-      <p className="mt-5 max-w-md font-serif text-lg/8 text-muted-foreground">
-        The entry may have moved, remained a draft, or never belonged to this library.
-      </p>
-      <Link className={buttonVariants({ variant: "outline", className: "mt-8" })} href="/">
-        Return to the library
-      </Link>
-    </div>
+    <TubeScreen channel="--" label="No signal" glass="black">
+      <span aria-hidden="true" className="tv-static animate-snow absolute inset-0 opacity-35" />
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center font-tube uppercase">
+        <p className="bg-tube px-3 text-2xl leading-7">Error 404 · sector unmapped</p>
+        <h1 className="bg-tube px-4 text-[clamp(4.5rem,13vw,10rem)] leading-[0.85]">No signal</h1>
+        <p className="max-w-md bg-tube px-3 text-xl leading-6">
+          The page may have moved, stayed a draft, or never existed on this station.
+        </p>
+        <Link
+          href="/"
+          className="bg-tube-foreground px-3 text-2xl leading-8 text-tube outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-tube-foreground"
+        >
+          [1] Return to station
+        </Link>
+      </div>
+    </TubeScreen>
   );
 }

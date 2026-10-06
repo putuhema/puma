@@ -26,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PanelLabel } from "@/components/catalogue";
 import { librarySidebarCookie, type ContentSection } from "@/lib/site";
 
 type LibraryNavigationEntry = {
@@ -59,7 +60,7 @@ export function LibraryReader({
   const [sidebarOpen, setSidebarOpen] = useState(initialSidebarOpen);
   const [sidebarHasInteracted, setSidebarHasInteracted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const sectionTitle = section === "books" ? "Books" : "Notes";
+  const sectionTitle = section === "books" ? "Tapes" : "Notes";
   const transition = prefersReducedMotion || !sidebarHasInteracted
     ? { duration: 0 }
     : drawerTransition;
@@ -109,14 +110,14 @@ export function LibraryReader({
   }, [sidebarOpen]);
 
   const titleList = (
-    <nav aria-label={`${sectionTitle} titles`} className="py-3">
+    <nav aria-label={`${sectionTitle} titles`}>
       {entries.length === 0 ? (
-        <p className="px-7 py-6 font-serif text-base italic text-muted-foreground">
+        <p className="px-6 py-6 text-sm text-muted-foreground">
           No titles yet.
         </p>
       ) : (
         <ol>
-          {entries.map((entry) => {
+          {entries.map((entry, index) => {
             const isActive = pathname === entry.href;
 
             return (
@@ -125,13 +126,13 @@ export function LibraryReader({
                   href={entry.href}
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => setMobileOpen(false)}
-                  className="group flex min-h-12 items-start gap-3 px-7 py-3 font-serif text-lg/6 tracking-[-0.015em] text-muted-foreground outline-none transition-[color,background-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/55 hover:text-foreground focus-visible:bg-muted focus-visible:text-foreground active:scale-[0.98] aria-[current=page]:text-foreground motion-reduce:transition-none"
+                  className="group flex min-h-11 items-baseline gap-3 px-6 py-3 text-sm/5 font-medium uppercase outline-none hover:bg-sunken focus-visible:bg-sunken aria-[current=page]:bg-foreground aria-[current=page]:text-background"
                 >
                   <span
                     aria-hidden="true"
-                    className={`mt-0.5 w-3 shrink-0 font-sans text-sm font-medium text-primary transition-opacity duration-150 motion-reduce:transition-none ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
+                    className="w-10 shrink-0 text-muted-foreground group-aria-[current=page]:text-background"
                   >
-                    ›
+                    #{String(entries.length - index).padStart(3, "0")}
                   </span>
                   <span>{entry.title}</span>
                 </Link>
@@ -156,11 +157,12 @@ export function LibraryReader({
           }}
           initial={false}
           transition={transition}
-          className={`fixed inset-y-0 left-0 z-20 hidden w-84 flex-col border-r bg-background/96 pb-28 backdrop-blur-md xl:flex ${sidebarOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+          className={`fixed top-13 bottom-(--softkeys-height) left-0 z-20 hidden w-84 flex-col border-r bg-background xl:flex ${sidebarOpen ? "pointer-events-auto" : "pointer-events-none"}`}
         >
-          <div className="px-7 pb-5 pt-14">
-            <h2 className="font-serif text-4xl tracking-[-0.04em]">{sectionTitle}</h2>
-          </div>
+          <PanelLabel>
+            <span>{sectionTitle} · index</span>
+            <span aria-hidden="true">⌘B</span>
+          </PanelLabel>
           <ScrollArea className="min-h-0 flex-1">{titleList}</ScrollArea>
         </motion.aside>
 
@@ -170,7 +172,7 @@ export function LibraryReader({
           }}
           initial={false}
           transition={transition}
-          className="fixed left-4 top-4 z-30 hidden xl:block"
+          className="fixed top-17 left-4 z-30 hidden xl:block"
         >
           <Tooltip>
             <TooltipTrigger
@@ -183,7 +185,7 @@ export function LibraryReader({
                   onClick={toggleSidebar}
                   size="icon"
                   variant="outline"
-                  className="rounded-full bg-background/80 shadow-sm backdrop-blur-md"
+                  className="bg-background"
                 />
               }
             >
@@ -195,7 +197,7 @@ export function LibraryReader({
           </Tooltip>
         </motion.div>
 
-        <div className="fixed left-4 top-4 z-30 xl:hidden">
+        <div className="fixed top-17 left-4 z-30 xl:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
@@ -204,7 +206,7 @@ export function LibraryReader({
                   aria-label={`Open ${sectionTitle.toLowerCase()} titles`}
                   size="icon"
                   variant="outline"
-                  className="rounded-full bg-background/80 shadow-sm backdrop-blur-md"
+                  className="bg-background"
                 />
               }
             >
@@ -215,7 +217,7 @@ export function LibraryReader({
               className="w-[min(22rem,calc(100vw-2rem))] gap-0 pb-24"
             >
               <SheetHeader className="border-b px-6 py-5">
-                <SheetTitle className="font-serif text-3xl tracking-[-0.035em]">
+                <SheetTitle className="font-display text-4xl font-bold uppercase">
                   {sectionTitle}
                 </SheetTitle>
                 <SheetDescription>Select a title to read.</SheetDescription>

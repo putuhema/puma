@@ -1,101 +1,94 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeftIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { BookEntry } from "@/components/book-entry";
+import { Leader } from "@/components/leader";
 import { formatEntryDate, type ContentEntry } from "@/lib/content";
 import { sectionDetails } from "@/lib/site";
-import { cn } from "@/lib/utils";
 
-export function MdxArticle({
-  children,
-  entry,
-  reader = false,
-}: {
-  children: ReactNode;
-  entry: ContentEntry;
-  reader?: boolean;
-}) {
+/**
+ * Articles play back on the tube as a case file, annotated by the archivist's
+ * red pen.
+ */
+export function MdxArticle({ children, entry }: { children: ReactNode; entry: ContentEntry }) {
   const section = sectionDetails[entry.section];
   const showContents = entry.headings.length >= 2;
 
   return (
-    <article
-      className={cn(
-        "mx-auto w-full px-5 sm:px-10",
-        reader
-          ? "max-w-5xl pb-36 pt-20 sm:pt-24 lg:px-14"
-          : "max-w-7xl py-10 sm:py-16 lg:px-12 lg:py-20",
-      )}
-    >
-      <div
-        className={cn(
-          reader
-            ? "mx-auto max-w-3xl"
-            : "grid gap-12 xl:grid-cols-[minmax(0,44rem)_14rem] xl:justify-center xl:gap-20",
-        )}
-      >
-        <div className="min-w-0">
-          {!reader && (
-            <Link
-              className="inline-flex items-center gap-2 rounded-sm text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground outline-none transition-colors duration-150 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-              href={`/${entry.section}`}
+    <div className="flex flex-1 flex-col px-2 pb-16 sm:px-6 lg:px-10">
+      <div className="sticky top-[calc(env(safe-area-inset-top)+3.5rem)] z-10 bg-background pt-3 lg:pt-5">
+        <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground">
+          <Link href={`/${entry.section}`} className="outline-none hover:text-foreground focus-visible:text-foreground">
+            ◂ Back to {section.title === "Books" ? "Tapes" : section.title}{" "}
+            <span className="hidden sm:inline">(Esc)</span>
+          </Link>
+          <span className="truncate">{entry.href}</span>
+        </p>
+      </div>
+
+      <article className="animate-tube-on mx-auto mt-4 w-full max-w-4xl border border-rule bg-surface/60 px-5 pt-8 pb-14 shadow-[inset_0_0_4rem_rgb(0_0_0/0.5)] sm:px-12 sm:pt-12">
+        <header className="relative">
+          <div className="type-label flex justify-between gap-4 text-muted-foreground">
+            <span>
+              Sheet {section.index} · {section.title}
+            </span>
+            <time dateTime={entry.publishedAt}>{formatEntryDate(entry.publishedAt)}</time>
+          </div>
+
+          <h1 className="mt-10 max-w-3xl font-osd text-4xl leading-[1] text-balance uppercase sm:text-6xl">
+            {entry.title}
+          </h1>
+          <p className="mt-5 max-w-2xl text-base/7 text-muted-foreground sm:text-lg/8">{entry.summary}</p>
+
+          {entry.readingStatus && (
+            <p
+              aria-hidden="true"
+              className="absolute top-8 right-0 rotate-[-6deg] border-2 border-stamp px-2.5 py-1 font-display text-sm font-bold tracking-[0.14em] text-stamp uppercase sm:top-6"
             >
-              <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-              {section.title}
-            </Link>
+              {entry.readingStatus}
+            </p>
           )}
 
-          <header className={reader ? undefined : "mt-9"}>
-            <div className="flex flex-wrap items-center gap-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              {!reader && <span>{section.index}</span>}
-              {!reader && <span aria-hidden="true">/</span>}
-              <time dateTime={entry.publishedAt}>{formatEntryDate(entry.publishedAt)}</time>
-              {entry.updatedAt && <span>Updated {formatEntryDate(entry.updatedAt)}</span>}
-            </div>
-            <h1 className="mt-5 max-w-3xl font-serif text-4xl leading-[0.98] tracking-[-0.045em] text-balance sm:text-6xl">
-              {entry.title}
-            </h1>
-            <p className="mt-6 max-w-2xl font-serif text-xl/8 text-muted-foreground italic">
-              {entry.summary}
-            </p>
-            {entry.tags.length > 0 && (
-              <div className="mt-6 flex flex-wrap gap-2">
-                {entry.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
+          <dl className="mt-8 grid gap-x-12 sm:grid-cols-2">
             {entry.section === "books" && <BookEntry entry={entry} />}
-          </header>
+            <Leader label="Filed">{formatEntryDate(entry.publishedAt)}</Leader>
+            {entry.updatedAt && <Leader label="Revised">{formatEntryDate(entry.updatedAt)}</Leader>}
+            {entry.tags.length > 0 && (
+              <Leader label="Tags">
+                {entry.tags.map((tag) => (
+                  <span key={tag} className="ml-1.5 bg-sunken px-1">
+                    #{tag}
+                  </span>
+                ))}
+              </Leader>
+            )}
+          </dl>
 
-          <div className="mt-12 max-w-[42rem] sm:mt-16">{children}</div>
-        </div>
-
-        {!reader && showContents && (
-          <aside className="hidden xl:block">
-            <nav aria-label="On this page" className="sticky top-12 border-l pl-6">
-              <p className="mb-5 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                On this page
-              </p>
-              <ol className="flex flex-col gap-3">
-                {entry.headings.map((heading) => (
-                  <li className={heading.depth === 3 ? "pl-3" : undefined} key={heading.id}>
+          {showContents && (
+            <nav aria-label="On this sheet" className="mt-8">
+              <p className="type-label text-muted-foreground">On this sheet</p>
+              <ol className="mt-2 flex flex-col">
+                {entry.headings.map((heading, index) => (
+                  <li key={heading.id} className={heading.depth === 3 ? "pl-6" : undefined}>
                     <a
-                      className="block text-sm/5 text-muted-foreground transition-colors duration-150 hover:text-foreground motion-reduce:transition-none"
                       href={`#${heading.id}`}
+                      className="flex gap-3 text-sm leading-7 outline-none hover:text-osd focus-visible:text-osd"
                     >
+                      <span className="w-6 shrink-0 text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
                       {heading.title}
                     </a>
                   </li>
                 ))}
               </ol>
             </nav>
-          </aside>
-        )}
-      </div>
-    </article>
+          )}
+        </header>
+
+        <div className="mt-10 max-w-[40rem] sm:mt-12">{children}</div>
+
+        <p className="type-label mt-16 border-t border-dashed pt-4 text-center text-muted-foreground">
+          End of tape · Esc steps back · j / k to scroll
+        </p>
+      </article>
+    </div>
   );
 }

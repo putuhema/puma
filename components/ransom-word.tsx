@@ -128,7 +128,7 @@ export function RansomWord() {
 
   return (
     <LazyMotion features={domAnimation}>
-      <div className="flex items-center justify-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-1">
         <audio ref={pickSound} src="/pick.mp3" preload="auto" muted={muted} />
         {letters.map((letter, letterIndex) => {
         const activeIndex = variants?.[letterIndex] ?? 0;
@@ -158,7 +158,7 @@ export function RansomWord() {
                 : { type: "spring", duration: 0.5, bounce: 0.2 }
             }
             onClick={() => rotateCutting(letterIndex)}
-            className="relative size-16 shrink-0 touch-manipulation select-none outline-none ring-offset-4 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring sm:size-32 lg:size-40"
+            className="relative size-16 shrink-0 touch-manipulation select-none outline-none ring-offset-4 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring min-[400px]:size-20 sm:size-24"
           >
             {letter.cuttings.map((cutting, cuttingIndex) => (
               <Image
@@ -166,7 +166,7 @@ export function RansomWord() {
                 src={cutting.src}
                 width={cutting.width}
                 height={cutting.height}
-                sizes="(max-width: 639px) 64px, (max-width: 1023px) 128px, 160px"
+                sizes="(max-width: 399px) 64px, (max-width: 639px) 80px, 96px"
                 alt=""
                 draggable={false}
                 className={cn(

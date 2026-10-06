@@ -1,4 +1,4 @@
-export const contentSections = ["notes", "books", "playground"] as const;
+export const contentSections = ["notes", "books"] as const;
 
 export type ContentSection = (typeof contentSections)[number];
 
@@ -18,11 +18,6 @@ export const sectionDetails: Record<
     description: "A reading ledger: what is open, what stayed, and what changed my mind.",
     index: "03",
   },
-  playground: {
-    title: "The Dragon Index",
-    description: "A comparative encyclopedia of dragons, ordered from smallest to largest.",
-    index: "04",
-  },
 };
 
 export function isContentSection(value: string): value is ContentSection {
@@ -34,11 +29,11 @@ export const siteConfig = {
   author: "Puma",
   description: "A web developer who loves to build stuff.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  /** The three channels, in tuning order; `shortcut` is the channel number. */
   navigation: [
-    { label: "Home", href: "/", shortcut: "1" },
+    { label: "Chat", href: "/", shortcut: "1" },
     { label: "Notes", href: "/notes", shortcut: "2" },
-    { label: "Books", href: "/books", shortcut: "3" },
-    { label: "Dragons", href: "/playground", shortcut: "4" },
+    { label: "Tapes", href: "/books", shortcut: "3" },
   ],
   links: [
     { label: "Email", href: "mailto:hello@example.com" },

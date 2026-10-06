@@ -8,8 +8,8 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Volume2Icon, VolumeXIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { sfx, type Sfx } from "@/lib/sfx";
+import { cn } from "@/lib/utils";
 
 const soundPreferenceKey = "puma-sound-muted";
 const soundPreferenceEvent = "puma-sound-preference-change";
@@ -68,20 +68,44 @@ export function useSound() {
 
 export function SoundControl() {
   const { muted, toggleMuted } = useSound();
-  const label = muted ? "Unmute sound" : "Mute sound";
 
   return (
-    <Button
+    <button
       type="button"
-      size="icon"
-      variant="outline"
-      aria-label={label}
-      aria-pressed={muted}
-      title={label}
+      role="switch"
+      aria-checked={!muted}
+      aria-label="Sound"
       onClick={toggleMuted}
-      className="fixed top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-50 rounded-full bg-background/80 shadow-sm backdrop-blur-md"
+      className="flex shrink-0 touch-manipulation flex-col justify-center px-3 text-left outline-none hover:bg-sunken focus-visible:bg-sunken sm:px-4"
     >
-      {muted ? <VolumeXIcon aria-hidden="true" /> : <Volume2Icon aria-hidden="true" />}
-    </Button>
+      <span aria-hidden="true" className="type-label text-[0.625rem] leading-3 text-muted-foreground">
+        Sound
+      </span>
+      <span aria-hidden="true" className="flex items-center gap-2 text-sm leading-5 font-medium">
+        <span
+          className={cn(
+            "h-2.5 w-3.5",
+            muted ? "border-[1.5px] border-foreground" : "bg-foreground",
+          )}
+        />
+        {muted ? "OFF" : "ON"}
+      </span>
+    </button>
   );
+}
+
+const silent: Sfx = {
+  key() {},
+  send() {},
+  receive() {},
+  blip() {},
+  channel() {},
+  error() {},
+  emote() {},
+};
+
+/** The station's sound effects, or silence when the visitor has muted them. */
+export function useSfx(): Sfx {
+  const { muted } = useSound();
+  return muted ? silent : sfx;
 }

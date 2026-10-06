@@ -1,38 +1,29 @@
-import { ExternalLinkIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Leader } from "@/components/leader";
 import type { ContentEntry } from "@/lib/content";
 
+/** The case-file rows a book's review carries above the text. */
 export function BookEntry({ entry }: { entry: ContentEntry }) {
   return (
-    <div className="mt-8 flex flex-col gap-5">
-      <Separator />
-      <div className="flex flex-col justify-between gap-5 py-1 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Book details
-          </p>
-          <p className="font-serif text-lg">
-            {entry.author} <span className="text-muted-foreground">· {entry.bookYear}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {entry.readingStatus && <Badge variant="secondary">{entry.readingStatus}</Badge>}
-          {entry.externalUrl && (
-            <a
-              className={buttonVariants({ variant: "outline" })}
-              href={entry.externalUrl}
-              rel="noreferrer"
-              target="_blank"
-            >
-              Publisher
-              <ExternalLinkIcon data-icon="inline-end" />
-            </a>
-          )}
-        </div>
-      </div>
-      <Separator />
-    </div>
+    <>
+      <Leader label="Author">{entry.author}</Leader>
+      <Leader label="Published">{entry.bookYear}</Leader>
+      <Leader label="Status">
+        <span className="relative inline-block px-1 after:absolute after:-inset-x-2 after:-inset-y-1 after:rotate-[-3deg] after:rounded-[50%] after:border-[1.5px] after:border-stamp">
+          {entry.readingStatus}
+        </span>
+      </Leader>
+      {entry.externalUrl && (
+        <Leader label="Publisher">
+          <a
+            href={entry.externalUrl}
+            rel="noreferrer"
+            target="_blank"
+            className="text-osd underline decoration-1 underline-offset-4 hover:decoration-2"
+          >
+            Visit ↗
+          </a>
+        </Leader>
+      )}
+    </>
   );
 }

@@ -3,6 +3,7 @@ export type Phosphor = (typeof phosphors)[number];
 
 export const effectsKey = "puma-effects";
 export const phosphorKey = "puma-phosphor";
+export const lensKey = "puma-lens";
 
 /**
  * Runs before the first paint (see the layout), so a visitor who turned the

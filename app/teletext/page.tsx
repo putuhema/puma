@@ -35,7 +35,7 @@ export default function TeletextPage() {
 
   return (
     <div className="flex flex-1 flex-col px-2 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-16 sm:px-6 lg:px-10 lg:pt-[calc(env(safe-area-inset-top)+1.25rem)] print:p-0">
-      <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground print:hidden">
+      <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground print:hidden pointer-coarse:pr-14">
         <Link href="/" className="outline-none hover:text-foreground focus-visible:text-foreground">
           ◂ Back to the station <span className="hidden sm:inline">(Esc)</span>
         </Link>

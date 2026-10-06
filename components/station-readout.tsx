@@ -2,16 +2,14 @@
 
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { OnAir } from "@/components/convex-client-provider";
+import { useListeners } from "@/hooks/use-listeners";
 import { formatEntryDate } from "@/lib/format";
+import { placeName } from "@/lib/places";
+import { stationPhase } from "@/lib/schedule";
 import { siteConfig } from "@/lib/site";
 import type { Archive } from "@/lib/transmission";
 import { cn } from "@/lib/utils";
-
-/** Seen this recently, still counts as tuned in. */
-const tunedMs = 75_000;
 
 /** The wall clock, ticking every 15 seconds; null on the server. */
 function subscribeToClock(onTick: () => void) {
@@ -25,14 +23,27 @@ function useClock() {
   return useSyncExternalStore(subscribeToClock, readClock, serverClock);
 }
 
-function TunedIn({ clock }: { clock: number | null }) {
-  const listeners = useQuery(api.listeners.list);
-  if (!listeners || clock === null) return null;
-  const count = Math.max(1, listeners.filter((lastSeen) => clock - lastSeen < tunedMs).length);
+function TunedIn() {
+  const listeners = useListeners();
+  if (!listeners) return null;
+  const count = Math.max(1, listeners.length);
+  // Where the others are: the busiest page that isn't empty.
+  const places = new Map<string, number>();
+  for (const listener of listeners) {
+    if (!listener.mine) places.set(placeName(listener.path), (places.get(placeName(listener.path)) ?? 0) + 1);
+  }
+  const busiest = [...places].sort((a, b) => b[1] - a[1])[0];
   return (
-    <li>
-      {count} tuned in{count === 1 ? " (you)" : ""}
-    </li>
+    <>
+      <li>
+        {count} tuned in{count === 1 ? " (you)" : ""}
+      </li>
+      {busiest && (
+        <li>
+          {busiest[1]} on {busiest[0]}
+        </li>
+      )}
+    </>
   );
 }
 
@@ -60,10 +71,11 @@ export function StationReadout({ archive, className }: { archive: Archive; class
     <ul aria-label="Station status" className={cn("type-osd flex flex-col gap-0.5 text-[0.6875rem] leading-4 text-muted-foreground", className)}>
       <li className="flex items-center gap-1.5 text-foreground">
         <span aria-hidden="true" className="size-2 animate-lamp bg-stamp shadow-[0_0_6px_var(--stamp)]" />
-        On air{daysOnAir !== null ? ` · day ${daysOnAir + 1}` : ""}
+        {clock !== null && stationPhase(clock) === "night" ? "After hours · night shift" : "On air"}
+        {daysOnAir !== null ? ` · day ${daysOnAir + 1}` : ""}
       </li>
       <OnAir>
-        <TunedIn clock={clock} />
+        <TunedIn />
       </OnAir>
       {latest && (
         <li className="max-w-56 truncate">

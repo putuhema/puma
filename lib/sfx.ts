@@ -144,6 +144,31 @@ export const sfx = {
     });
   },
 
+  /** Rewinding the tape: the motor whirrs up and the heads chatter. */
+  rewind() {
+    const ctx = audio();
+    if (!ctx) return;
+    tone(ctx, { type: "sawtooth", from: 120, to: 520, duration: 0.42, gain: 0.03 });
+    hiss(ctx, { duration: 0.45, frequency: 900, q: 2, gain: 0.05 });
+    tone(ctx, { type: "sine", from: 70, to: 40, start: 0.4, duration: 0.1, gain: 0.16 });
+  },
+
+  /** A sticker earned: a bright two-note ding. */
+  stamp() {
+    const ctx = audio();
+    if (!ctx) return;
+    tone(ctx, { type: "square", from: 1568, start: 0, duration: 0.07, gain: 0.025 });
+    tone(ctx, { type: "square", from: 2093, start: 0.08, duration: 0.16, gain: 0.025 });
+  },
+
+  /** The set switching off, or on: the tube's high whine and a thump. */
+  power(on: boolean) {
+    const ctx = audio();
+    if (!ctx) return;
+    tone(ctx, { type: "sine", from: on ? 60 : 15000, to: on ? 15000 : 60, duration: 0.35, gain: 0.02 });
+    tone(ctx, { type: "sine", from: 80, to: 40, duration: 0.12, gain: 0.2 });
+  },
+
   /** Nothing on that channel: a low buzz. */
   error() {
     const ctx = audio();

@@ -2,6 +2,7 @@ import { getArchive } from "@/lib/content";
 import { now, profile, profileLinks, siteConfig } from "@/lib/site";
 import { emotions, isEmotion } from "@/lib/emotions";
 import { clientAddress, rateLimit } from "@/lib/rate-limit";
+import { signLine } from "@/lib/still";
 import {
   instruments,
   type ChatEvent,
@@ -54,7 +55,7 @@ Facts you may use are only the ones below. Never invent biography, employers, sk
 After your reply, write a newline, then the character ${controlMarker}, then one JSON object on the same line:
 {"instrument": one of ${instruments.map((name) => `"${name}"`).join(", ")} or null, "entry": the [href] of one note or project from the archive or null, "mood": one of ${emotions.map((name) => `"${name}"`).join(", ")}}
 The mood is how you feel saying this line; your little screen face and body act it out. Vary it with the conversation: excited for good news, love when someone is kind, laugh at jokes, sad when there is no record, confused by nonsense, shy at compliments, wink when playful, grumpy only if someone is rude.
-Instruments mount under your reply: dossier (who the operator is), projects (the tape shelf of things the operator built; for anyone asking about work, a portfolio, experience or what they can do), notes (published notes), file (pulls out ONE specific note or project, named in "entry"; use it whenever you recommend or talk about a particular one), now (what the operator is doing these days), sanctuary (a door to channel 03, the Sanctuary: a live chat room where visitors talk to each other; for anyone wanting company or other people), guestbook (the station's guestbook, where visitors leave one line for good), game (Star Catcher, a little arcade minigame with a high-score table: fly your saucer, catch stars, dodge rocks; for play or boredom. It comes with a link to the arcade at /play, the same game full screen), transmit (contact form, for getting in touch or hiring), channels (the channel guide: buttons that tune to Chat, Notes, the Sanctuary and Projects, plus the arcade, guestbook, teletext and test card; when the visitor wants to go somewhere or look around the site). Pick one only when it genuinely helps.
+Instruments mount under your reply: dossier (who the operator is), projects (the tape shelf of things the operator built; for anyone asking about work, a portfolio, experience or what they can do), notes (published notes), file (pulls out ONE specific note or project, named in "entry"; use it whenever you recommend or talk about a particular one), now (what the operator is doing these days), sanctuary (a door to channel 03, the Sanctuary: a live chat room where visitors talk to each other; for anyone wanting company or other people), guestbook (the station's guestbook, where visitors leave one line for good), game (Star Catcher, a little arcade minigame with a high-score table: fly your saucer, catch stars, dodge rocks; for play or boredom. It comes with a link to the arcade at /play, the same game full screen), transmit (contact form, for getting in touch or hiring), channels (the channel guide: buttons that tune to Chat, Notes, the Sanctuary and Projects, plus the TV guide, arcade, passport (stickers for exploring), guestbook, teletext and test card; when the visitor wants to go somewhere or look around the site). Pick one only when it genuinely helps.
 
 On file about the operator:
 ${facts}
@@ -186,8 +187,12 @@ export async function POST(request: Request) {
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (event: ChatEvent) =>
+      /** Everything Mr. P has said so far, exactly as the client strings it together. */
+      let said = "";
+      const send = (event: ChatEvent) => {
+        if (event.type === "text") said += event.text;
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      };
       let buffer = "";
       let control: string | null = null;
 
@@ -225,11 +230,12 @@ export async function POST(request: Request) {
             if (delta) handleDelta(delta);
           }
         }
-        send(
+        const meta: ChatEvent =
           control === null
             ? { type: "meta", instruments: [], emotion: "happy" }
-            : parseControl(control),
-        );
+            : parseControl(control);
+        // Signed, so the line can be shared as a still that can't be forged.
+        send({ ...meta, sig: said.trim() ? signLine(said) : undefined });
       } catch (error) {
         console.error("P-4 stream error", error);
         send({ type: "meta", instruments: [], emotion: "happy" });

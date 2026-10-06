@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { InstrumentMount } from "@/components/instruments";
 import { MrP3D } from "@/components/mr-p-3d";
@@ -8,7 +8,9 @@ import { useSlashCommands } from "@/components/slash-commands";
 import { LineAnnouncer, PrintedText, ThinkingDots } from "@/components/speech";
 import { useSfx } from "@/components/sound-control";
 import { useConversation } from "@/hooks/use-conversation";
-import { busyPrompts, linePrompts, pocketGreeting } from "@/lib/station-replies";
+import { busyPrompts, linePrompts, pocketGreeting, touredKey } from "@/lib/station-replies";
+
+const wavedKey = "puma:waved";
 import type { Archive } from "@/lib/transmission";
 
 /**
@@ -26,8 +28,24 @@ export function DockedMrP({ archive }: { archive: Archive }) {
   const [draft, setDraft] = useState("");
   const greeted = useRef(false);
   const input = useRef<HTMLInputElement>(null);
+  /** A visitor who skipped the desk gets one wave pointing at the tour. */
+  const [waving, setWaving] = useState(false);
+
+  useEffect(() => {
+    if (window.localStorage.getItem(touredKey) || window.localStorage.getItem(wavedKey)) return;
+    const show = window.setTimeout(() => {
+      window.localStorage.setItem(wavedKey, "1");
+      setWaving(true);
+    }, 1500);
+    const hide = window.setTimeout(() => setWaving(false), 10_000);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, []);
 
   function toggle() {
+    setWaving(false);
     if (open) return close();
     setOpen(true);
     if (!greeted.current) {
@@ -170,6 +188,21 @@ export function DockedMrP({ archive }: { archive: Archive }) {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {waving && !open && (
+          <motion.p
+            key="wave"
+            role="status"
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+            transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
+            className="type-osd absolute right-2 bottom-[calc(100%-0.5rem)] w-56 origin-bottom-right border-2 border-foreground bg-surface px-3 py-2 text-xs leading-4 shadow-[4px_4px_0_var(--osd)] sm:bottom-auto sm:right-[calc(100%+0.25rem)] sm:top-2"
+          >
+            New here? Click me and type /teach for the tour.
+          </motion.p>
+        )}
+      </AnimatePresence>
       <MrP3D
         state={open ? conversation.mascotState(draft) : "idle"}
         emotion={conversation.emotion}

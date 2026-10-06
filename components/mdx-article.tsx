@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Leader } from "@/components/leader";
+import { TapeCounter } from "@/components/tape-counter";
 import { formatEntryDate, type ContentEntry } from "@/lib/content";
 import { sectionDetails } from "@/lib/site";
 
@@ -15,12 +16,12 @@ export function MdxArticle({ children, entry }: { children: ReactNode; entry: Co
   return (
     <div className="flex flex-1 flex-col px-2 pb-16 sm:px-6 lg:px-10">
       <div className="sticky top-0 z-10 bg-background pt-[calc(env(safe-area-inset-top)+0.75rem)] lg:pt-[calc(env(safe-area-inset-top)+1.25rem)]">
-        <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground">
+        <p className="type-label flex items-center justify-between gap-4 px-1 text-muted-foreground pointer-coarse:pr-14">
           <Link href={`/${entry.section}`} className="outline-none hover:text-foreground focus-visible:text-foreground">
             ◂ Back to {section.title}{" "}
             <span className="hidden sm:inline">(Esc)</span>
           </Link>
-          <span className="truncate">{entry.href}</span>
+          <TapeCounter href={entry.href} title={entry.title} minutes={entry.readingMinutes} />
         </p>
       </div>
 
@@ -40,6 +41,7 @@ export function MdxArticle({ children, entry }: { children: ReactNode; entry: Co
 
           <dl className="mt-8 grid gap-x-12 sm:grid-cols-2">
             <Leader label="Filed">{formatEntryDate(entry.publishedAt)}</Leader>
+            <Leader label="Running time">{entry.readingMinutes} min</Leader>
             {entry.updatedAt && <Leader label="Revised">{formatEntryDate(entry.updatedAt)}</Leader>}
             {entry.role && <Leader label="Role">{entry.role}</Leader>}
             {entry.stack.length > 0 && <Leader label="Stack">{entry.stack.join(" · ")}</Leader>}

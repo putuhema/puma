@@ -27,6 +27,8 @@ export type Transmission = {
   emotion?: Emotion;
   /** The note or project the "file" instrument pulls out, by href. */
   entry?: string;
+  /** The server's signature on the line, so it can be shared as a still. */
+  sig?: string;
 };
 
 /** What the station is doing right now; drives the readout and lamps. */
@@ -60,4 +62,4 @@ export type ChatRequest = {
 /** One line of the /api/chat NDJSON stream. */
 export type ChatEvent =
   | { type: "text"; text: string }
-  | { type: "meta"; instruments: Instrument[]; emotion: Emotion; entry?: string };
+  | { type: "meta"; instruments: Instrument[]; emotion: Emotion; entry?: string; sig?: string };

@@ -6,6 +6,7 @@ import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import { useSfx } from "@/components/sound-control";
 import { stationSession } from "@/lib/session";
+import { awardStamp } from "@/lib/stamps";
 import { cn } from "@/lib/utils";
 
 const boardSize = 10;
@@ -48,6 +49,7 @@ export function HighScores({
     try {
       const place = await submit({ sessionId: stationSession(), initials, score });
       sound.receive();
+      awardStamp("board");
       setFiled({ score, text: place === 1 ? "New record. Mr. P has been told." : `You're number ${place} on the board.` });
       setOpen(true);
       if (place === 1) onRecord?.(score);

@@ -195,6 +195,7 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
                       instruments: event.instruments,
                       emotion: event.emotion,
                       entry: event.entry,
+                      sig: event.sig,
                       complete: true,
                     }
                   : item,
@@ -221,7 +222,11 @@ export function useConversation({ archive, greeting }: { archive: Archive; greet
   /** A line from Mr. P that nobody asked for: the tour, say. */
   const say = useCallback(
     (reply: Reply) =>
-      startReply({ ...makeTransmission("station", reply.text, reply.instruments), emotion: reply.emotion }),
+      startReply({
+        ...makeTransmission("station", reply.text, reply.instruments),
+        emotion: reply.emotion,
+        entry: reply.entry,
+      }),
     [startReply],
   );
 

@@ -48,7 +48,9 @@ export const siteConfig = {
   ],
   /** Off the dial: pages you reach through /go or the channel guide. */
   extras: [
+    { label: "TV guide", href: "/guide", detail: "What's on every channel" },
     { label: "Arcade", href: "/play", detail: "Star Catcher, full screen" },
+    { label: "Passport", href: "/passport", detail: "Your stickers for exploring" },
     {
       label: "Guestbook",
       href: "/guestbook",

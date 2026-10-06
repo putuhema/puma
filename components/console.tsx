@@ -1,15 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useCrtBulge } from "@/components/crt-bulge";
 import { CrtOverlay } from "@/components/crt-overlay";
-import { DockedMrP } from "@/components/docked-mr-p";
+import { RemoteControl } from "@/components/remote-control";
 import { usePreferences } from "@/components/set-preferences";
 import { useSfx, useSound } from "@/components/sound-control";
+import { StampToast } from "@/components/stamp-toast";
 import { useStation } from "@/components/station-context";
+import { VcrOsd } from "@/components/vcr-osd";
+import { countVisit } from "@/lib/memory";
 import { siteConfig } from "@/lib/site";
+import { logChannel } from "@/lib/stamps";
 import type { Archive } from "@/lib/transmission";
+import { cn } from "@/lib/utils";
+
+/**
+ * Mr. P in the corner pulls in Three.js; off the desk he loads after the
+ * page itself, so an article is readable before he's drawn.
+ */
+const DockedMrP = dynamic(() => import("@/components/docked-mr-p").then((module) => module.DockedMrP), {
+  ssr: false,
+});
+
+/** ↑ ↑ ↓ ↓ ← → ← → B A: the way to the channel that isn't on the guide. */
+const konami = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+const secretChannel = "/channel-7";
 
 function isTypingTarget(target: EventTarget | null) {
   return (
@@ -31,19 +49,93 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
   const { screen } = useStation();
   const { toggleMuted } = useSound();
   const sound = useSfx();
-  /** Full lens: bend the picture itself, not just the glass. Softens text. */
-  const [fullLens, setFullLens] = useState(false);
-  const { effects } = usePreferences();
+  /**
+   * Full lens: bend the picture itself, not just the glass. On by default and
+   * remembered; it softens text, so Alt+B (or /effects) flattens it.
+   */
+  const { effects, lens: fullLens, toggleLens } = usePreferences();
   const { filters: lensFilters, available: lensAvailable } = useCrtBulge();
   const bulging = fullLens && lensAvailable && effects;
   const previousPath = useRef(pathname);
+  /** The page Back is rewinding to, while the tape rolls. */
+  const [rewindPath, setRewindPath] = useState<string | null>(null);
+  const rewinding = rewindPath === pathname;
+  /**
+   * The set's power: on, squeezing down to a dot, off on standby, or
+   * blooming back. Only the picture goes; the conversation survives.
+   */
+  const [power, setPower] = useState<"on" | "turning-off" | "off" | "waking">("on");
 
-  // Changing channel: the VCR mechanism clunks.
+  // Changing channel: the VCR mechanism clunks (unless it's rewinding).
   useEffect(() => {
     if (previousPath.current === pathname) return;
     previousPath.current = pathname;
-    sound.channel();
-  }, [pathname, sound]);
+    if (rewindPath !== pathname) sound.channel();
+    logChannel(pathname, siteConfig.navigation.map((item) => item.href));
+  }, [pathname, rewindPath, sound]);
+
+  // Counted once per visit, so Mr. P knows a regular.
+  useEffect(() => {
+    countVisit();
+    logChannel(window.location.pathname, siteConfig.navigation.map((item) => item.href));
+  }, []);
+
+  // Back (or forward) through history rewinds the tape.
+  useEffect(() => {
+    let timer = 0;
+    function rewind() {
+      sound.rewind();
+      setRewindPath(window.location.pathname);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setRewindPath(null), 520);
+    }
+    window.addEventListener("popstate", rewind);
+    return () => {
+      window.removeEventListener("popstate", rewind);
+      window.clearTimeout(timer);
+    };
+  }, [sound]);
+
+  function switchOff() {
+    sound.power(false);
+    setPower("turning-off");
+    window.setTimeout(() => setPower((state) => (state === "turning-off" ? "off" : state)), 520);
+  }
+
+  function switchOn() {
+    sound.power(true);
+    setPower("waking");
+    window.setTimeout(() => setPower((state) => (state === "waking" ? "on" : state)), 260);
+  }
+
+  // On standby, any key switches the set back on.
+  useEffect(() => {
+    if (power !== "off") return;
+    function wake(event: KeyboardEvent) {
+      event.preventDefault();
+      sound.power(true);
+      setPower("waking");
+      window.setTimeout(() => setPower((state) => (state === "waking" ? "on" : state)), 260);
+    }
+    window.addEventListener("keydown", wake);
+    return () => window.removeEventListener("keydown", wake);
+  }, [power, sound]);
+
+  // The Konami code, typed anywhere that isn't a text box.
+  useEffect(() => {
+    let progress = 0;
+    function listen(event: KeyboardEvent) {
+      if (isTypingTarget(event.target)) return;
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      progress = key === konami[progress] ? progress + 1 : key === konami[0] ? 1 : 0;
+      if (progress === konami.length) {
+        progress = 0;
+        router.push(secretChannel);
+      }
+    }
+    window.addEventListener("keydown", listen);
+    return () => window.removeEventListener("keydown", listen);
+  }, [router]);
 
   // Set controls that work on every page.
   useEffect(() => {
@@ -54,13 +146,13 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
         toggleMuted();
       } else if (event.code === "KeyB") {
         event.preventDefault();
-        setFullLens((value) => !value);
+        toggleLens();
       }
     }
 
     window.addEventListener("keydown", operateSet);
     return () => window.removeEventListener("keydown", operateSet);
-  }, [toggleMuted]);
+  }, [toggleLens, toggleMuted]);
 
   // Channels: Alt+1–3 from anywhere, even mid-sentence. Off the chat, where
   // nothing is being typed, the bare number keys tune too, Esc steps back
@@ -69,7 +161,11 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
     function tune(event: KeyboardEvent) {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey) return;
       const number = event.code.startsWith("Digit") ? event.code.slice(5) : null;
-      const channel = siteConfig.navigation.find((item) => item.shortcut === number);
+      // Channel 00 is the test card.
+      const channel =
+        number === "0"
+          ? { href: "/test-card", shortcut: "0" }
+          : siteConfig.navigation.find((item) => item.shortcut === number);
       const typing = isTypingTarget(event.target);
       const offChat = pathname !== "/" && !typing;
 
@@ -120,7 +216,12 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
       {/* The full lens sits on a viewport-sized frame, not the scroller, so only
           what is on screen is drawn through it. */}
       <div
-        className="fixed inset-0 bg-background print:static"
+        className={cn(
+          "fixed inset-0 bg-background print:static",
+          power === "turning-off" && "animate-tube-off",
+          power === "off" && "invisible",
+          power === "waking" && "animate-tube-on",
+        )}
         style={bulging ? { filter: "url(#crt-bulge)" } : undefined}
       >
       <div
@@ -129,7 +230,7 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
         className="size-full overflow-y-auto overscroll-contain outline-none [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin] print:h-auto print:overflow-visible"
       >
         <div className="flex min-h-full flex-col">
-          <div key={pathname} className="animate-tear flex min-w-0 flex-1 flex-col">
+          <div key={pathname} className={cn("flex min-w-0 flex-1 flex-col", rewinding ? "animate-rewind" : "animate-tear")}>
             {children}
           </div>
         </div>
@@ -138,6 +239,19 @@ export function Console({ archive, children }: { archive: Archive; children: Rea
       {pathname !== "/" && <DockedMrP archive={archive} />}
       </div>
       <CrtOverlay curvedGlass={lensAvailable && effects} />
+      <VcrOsd rewinding={rewinding} />
+      <StampToast />
+      <RemoteControl onPower={switchOff} />
+      {power === "off" && (
+        <button
+          type="button"
+          onClick={switchOn}
+          className="fixed inset-0 z-[70] flex flex-col items-center justify-end gap-2 bg-black pb-[calc(env(safe-area-inset-bottom)+3rem)] font-osd text-xs text-muted-foreground uppercase outline-none"
+        >
+          <span aria-hidden="true" className="size-2 animate-lamp rounded-full bg-stamp shadow-[0_0_8px_var(--stamp)]" />
+          Standby · tap or press any key to switch on
+        </button>
+      )}
     </>
   );
 }

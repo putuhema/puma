@@ -5,6 +5,7 @@ import { OnAir } from "@/components/convex-client-provider";
 import { HighScores } from "@/components/high-scores";
 import { useSfx } from "@/components/sound-control";
 import type { Sfx } from "@/lib/sfx";
+import { awardStamp } from "@/lib/stamps";
 
 type Phase = "ready" | "playing" | "over";
 type Kind = "star" | "rock" | "heart";
@@ -128,6 +129,7 @@ export function StarCatcher({
       shipX = width / 2;
       state.phase = "playing";
       setPhase("playing");
+      awardStamp("player");
       soundRef.current.send();
       last = performance.now();
       cancelAnimationFrame(frame);

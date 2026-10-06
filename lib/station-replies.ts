@@ -139,6 +139,8 @@ const channelWords: Record<string, RegExp> = {
   "/projects": /\b(projects?|work|portfolio|tapes?|shelf|channel 0?4|ch ?0?4)\b/,
   "/guestbook": /\b(guest ?book)\b/,
   "/play": /\b(arcade|game|star catcher|play)\b/,
+  "/guide": /\b(tv ?guide|guide|listings|schedule)\b/,
+  "/passport": /\b(passport|stickers?|stamps?)\b/,
   "/teletext": /\b(teletext|resume|résumé|cv)\b/,
   "/test-card": /\b(test ?card|colophon|channel 0?0|ch ?0?0)\b/,
 };
@@ -231,6 +233,52 @@ export const tour: Reply[] = [
     emotion: "love",
   },
 ];
+
+/**
+ * His hello, fitted to the moment: a returning visitor mid-read gets their
+ * place back, the night shift yawns, the morning has just signed on.
+ */
+export function greetingFor({
+  phase,
+  visits,
+  reading,
+}: {
+  phase: "night" | "morning" | "day";
+  visits: number;
+  reading: { href: string; title: string; progress: number } | null;
+}): Reply {
+  if (reading && visits > 1) {
+    const how = reading.progress < 0.35 ? "just getting into" : reading.progress < 0.65 ? "halfway through" : "nearly done with";
+    return {
+      text: `Back again. Last time you were ${how} "${reading.title}". I kept your place; the tape's right where you left it.`,
+      instruments: ["file"],
+      emotion: "love",
+      entry: reading.href,
+    };
+  }
+  if (phase === "night") {
+    return {
+      text: `You've caught the night shift. The station signed off at eleven and ${siteConfig.author} is asleep, so it's just me and the test card. Ask away; I'm awake, technically.`,
+      instruments: [],
+      emotion: "sleepy",
+    };
+  }
+  if (phase === "morning") {
+    return {
+      text: `Morning. The station's only just signed on; the coffee is theoretical. I'm Mr. P, ${siteConfig.author}'s host. Ask about the operator, their projects, anything.`,
+      instruments: [],
+      emotion: "happy",
+    };
+  }
+  if (visits > 1) {
+    return {
+      text: `Oh, it's you again. Visit number ${visits}; I'm keeping count, it's a small station. What can I find you this time?`,
+      instruments: [],
+      emotion: "wink",
+    };
+  }
+  return bootGreeting;
+}
 
 /** What the line says while it waits, one per turn, so it never gets stale. */
 export const linePrompts = [

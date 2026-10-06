@@ -137,3 +137,80 @@ export async function stationCard({ kicker, title, summary }: { kicker: string; 
     },
   );
 }
+
+/** A still of one of Mr. P's lines: his words in phosphor, signed by him. */
+export async function quoteCard(line: string) {
+  const text = `${line}MR. P SAID— Mr. P, host of Field Station P-4${siteConfig.name}▶ PLAY0123456789`;
+  const vt323 = await googleFont("VT323", text);
+  const silkscreen = await googleFont("Silkscreen", text.toUpperCase());
+  const size = line.length > 300 ? 40 : line.length > 160 ? 50 : 64;
+
+  return new ImageResponse(
+    (
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#000", padding: 28 }}>
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            borderRadius: 48,
+            overflow: "hidden",
+            background: palette.glass,
+            color: palette.phosphor,
+            padding: "44px 60px",
+            fontFamily: vt323 ? "VT323" : undefined,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignSelf: "flex-start",
+              padding: "4px 14px",
+              background: palette.osd,
+              color: "#f4f6ff",
+              fontSize: 28,
+              fontFamily: silkscreen ? "Silkscreen" : undefined,
+            }}
+          >
+            MR. P SAID
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              alignItems: "center",
+              fontSize: size,
+              lineHeight: 1.12,
+              textShadow: "-2px 0 0 rgba(255,40,80,0.45), 2px 0 0 rgba(40,140,255,0.45), 0 0 22px rgba(227,236,228,0.3)",
+            }}
+          >
+            “{line}”
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 32, color: palette.signal }}>
+            <div style={{ display: "flex" }}>— Mr. P, host of Field Station P-4</div>
+            <div style={{ display: "flex" }}>{new URL(siteConfig.url).host}</div>
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              backgroundImage: "repeating-linear-gradient(to bottom, rgba(0,0,0,0.28) 0px, rgba(0,0,0,0.28) 2px, transparent 2px, transparent 5px)",
+            }}
+          />
+        </div>
+      </div>
+    ),
+    {
+      ...ogSize,
+      fonts: [
+        ...(vt323 ? [{ name: "VT323", data: vt323, style: "normal" as const, weight: 400 as const }] : []),
+        ...(silkscreen ? [{ name: "Silkscreen", data: silkscreen, style: "normal" as const, weight: 400 as const }] : []),
+      ],
+    },
+  );
+}

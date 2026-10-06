@@ -16,6 +16,7 @@ import { StarCatcher } from "@/components/star-catcher";
 import { TapeShelf } from "@/components/tape-shelf";
 import { formatEntryDate } from "@/lib/format";
 import { stationSession } from "@/lib/session";
+import { awardStamp } from "@/lib/stamps";
 import { now, profile, profileLinks, siteConfig } from "@/lib/site";
 import { findEntry, type Archive, type Instrument } from "@/lib/transmission";
 import { cn } from "@/lib/utils";
@@ -179,6 +180,7 @@ function TransmitterForm({
       });
       form.reset();
       sound.send();
+      awardStamp("transmitted");
       setState({ phase: "sent" });
     } catch (error) {
       sound.error();

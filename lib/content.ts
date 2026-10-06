@@ -42,6 +42,8 @@ export type ContentEntry = EntryMetadata & {
   slug: string;
   href: string;
   headings: EntryHeading[];
+  /** How long it takes to read, at a steady 220 words a minute. */
+  readingMinutes: number;
 };
 
 function assertString(
@@ -155,6 +157,7 @@ function readEntry(section: ContentSection, slug: string): ContentEntry | null {
     slug,
     href: `/${section}/${slug}`,
     headings: extractHeadings(content),
+    readingMinutes: Math.max(1, Math.round(content.split(/\s+/).filter(Boolean).length / 220)),
   };
 }
 

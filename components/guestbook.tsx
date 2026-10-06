@@ -6,6 +6,7 @@ import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import { useSfx } from "@/components/sound-control";
 import { stationSession } from "@/lib/session";
+import { awardStamp } from "@/lib/stamps";
 import { cn } from "@/lib/utils";
 
 const maxName = 24;
@@ -49,6 +50,7 @@ export function Guestbook() {
       window.localStorage.setItem(nameKey, name.trim());
       setBody("");
       sound.send();
+      awardStamp("signed");
     } catch (error) {
       sound.error();
       setNotice(error instanceof ConvexError ? String(error.data) : "The pen ran dry. Try again.");

@@ -102,6 +102,9 @@ const silent: Sfx = {
   channel() {},
   error() {},
   emote() {},
+  rewind() {},
+  stamp() {},
+  power() {},
 };
 
 /** The station's sound effects, or silence when the visitor has muted them. */

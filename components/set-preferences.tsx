@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { effectsKey, phosphorKey, phosphors, type Phosphor } from "@/lib/preferences";
+import { effectsKey, lensKey, phosphorKey, phosphors, type Phosphor } from "@/lib/preferences";
 
 const changeEvent = "puma-preferences-change";
 
@@ -23,6 +23,7 @@ function subscribe(onChange: () => void) {
 }
 
 const readEffects = () => localStorage.getItem(effectsKey) !== "off";
+const readLens = () => localStorage.getItem(lensKey) !== "off";
 const readPhosphor = (): Phosphor => {
   const stored = localStorage.getItem(phosphorKey);
   return phosphors.includes(stored as Phosphor) ? (stored as Phosphor) : "white";
@@ -37,6 +38,9 @@ type PreferencesValue = {
   /** Scanlines, glow, static and tape tears: the CRT dressing. */
   effects: boolean;
   toggleEffects: () => void;
+  /** The full lens: the picture itself bends, not just the glass. */
+  lens: boolean;
+  toggleLens: () => void;
   /** The tint of the tube's phosphor. */
   phosphor: Phosphor;
   cyclePhosphor: () => Phosphor;
@@ -48,6 +52,7 @@ const PreferencesContext = createContext<PreferencesValue | null>(null);
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const effects = useSyncExternalStore(subscribe, readEffects, () => true);
   const phosphor = useSyncExternalStore(subscribe, readPhosphor, () => "white" as const);
+  const lens = useSyncExternalStore(subscribe, readLens, () => true);
 
   useEffect(() => {
     document.documentElement.dataset.effects = effects ? "on" : "off";
@@ -55,6 +60,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [effects, phosphor]);
 
   const toggleEffects = useCallback(() => write(effectsKey, readEffects() ? "off" : "on"), []);
+  const toggleLens = useCallback(() => write(lensKey, readLens() ? "off" : "on"), []);
   const cyclePhosphor = useCallback(() => {
     const next = phosphors[(phosphors.indexOf(readPhosphor()) + 1) % phosphors.length];
     write(phosphorKey, next);
@@ -62,8 +68,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ effects, toggleEffects, phosphor, cyclePhosphor }),
-    [cyclePhosphor, effects, phosphor, toggleEffects],
+    () => ({ effects, toggleEffects, lens, toggleLens, phosphor, cyclePhosphor }),
+    [cyclePhosphor, effects, lens, phosphor, toggleEffects, toggleLens],
   );
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }

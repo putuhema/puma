@@ -35,7 +35,7 @@ const colophon: [string, string][] = [
   ["Motion", "Motion for the bubbles, CSS for the tube"],
   ["Words", "MDX files, read at build time"],
   ["Sound", "Synthesised live with the Web Audio API, no samples"],
-  ["Glass", "An SVG displacement map bends the raster (Alt+B bends the picture)"],
+  ["Glass", "An SVG displacement map bends the raster and the picture behind it (Alt+B flattens it)"],
   ["Type", "VT323, Silkscreen, IBM Plex Mono, IBM Plex Sans Condensed"],
   ["Styling", "Tailwind CSS 4"],
 ];
@@ -47,7 +47,7 @@ const colophon: [string, string][] = [
 export default function TestCardPage() {
   return (
     <div className="flex flex-1 flex-col px-2 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-16 sm:px-6 lg:px-10 lg:pt-[calc(env(safe-area-inset-top)+1.25rem)]">
-      <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground">
+      <p className="type-label flex justify-between gap-4 px-1 text-muted-foreground pointer-coarse:pr-14">
         <Link href="/" className="outline-none hover:text-foreground focus-visible:text-foreground">
           ◂ Back to the station <span className="hidden sm:inline">(Esc)</span>
         </Link>
@@ -101,7 +101,7 @@ export default function TestCardPage() {
             <Leader label="/effects">Scanlines, glow and static on or off</Leader>
             <Leader label="/theme">Phosphor: white, green or amber</Leader>
             <Leader label="Alt M · /mute">Sound</Leader>
-            <Leader label="Alt B">Bend the picture through the lens</Leader>
+            <Leader label="Alt B">Full lens on or off</Leader>
             <Leader label="?">The whole keyboard map, on the chat</Leader>
           </dl>
         </article>

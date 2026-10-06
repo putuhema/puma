@@ -17,10 +17,15 @@ import { useSlashCommands } from "@/components/slash-commands";
 import { useSfx } from "@/components/sound-control";
 import { LineAnnouncer, PrintedText, ThinkingDots } from "@/components/speech";
 import { useStation } from "@/components/station-context";
+import { OnAir } from "@/components/convex-client-provider";
 import { StationReadout } from "@/components/station-readout";
+import { VisitorSaucers } from "@/components/visitor-saucers";
 import { useConversation } from "@/hooks/use-conversation";
 import { useWander } from "@/hooks/use-wander";
-import { bootGreeting, busyPrompts, linePrompts, tour, touredKey } from "@/lib/station-replies";
+import { lastReading, visitCount } from "@/lib/memory";
+import { stationPhase } from "@/lib/schedule";
+import { awardStamp } from "@/lib/stamps";
+import { bootGreeting, busyPrompts, greetingFor, linePrompts, tour, touredKey } from "@/lib/station-replies";
 import type { Archive } from "@/lib/transmission";
 
 function isTypingTarget(target: EventTarget | null) {
@@ -65,6 +70,8 @@ export function TransmissionDesk({
   const recallIndex = useRef(-1);
   const input = useRef<HTMLInputElement>(null);
   const transcript = useRef<HTMLElement>(null);
+  /** Whether the share link for his current line was just copied. */
+  const [copied, setCopied] = useState<string | null>(null);
   /** Which line of the first-visit tour he's on, or null when he isn't touring. */
   const [tourStep, setTourStep] = useState<number | null>(null);
 
@@ -80,7 +87,7 @@ export function TransmissionDesk({
     screen.current?.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }, [currentId, reduceMotion, screen]);
 
-  const { ask: send, say, replayCurrent, skip } = conversation;
+  const { ask: send, say, skip } = conversation;
   const ask = useCallback(
     (question: string, viaSoftKey = false) => {
       if (!question.trim() || busy) return;
@@ -92,16 +99,19 @@ export function TransmissionDesk({
     [busy, send],
   );
 
-  /** Walk up to him: the bubble pops up, with his hello the first time. */
+  /**
+   * Walk up to him: the bubble pops up, with his hello the first time,
+   * fitted to the hour and to whether he's seen this visitor before.
+   */
   const talk = useCallback(() => {
     sound.key();
     setOpen(true);
     if (!greeted.current) {
       greeted.current = true;
-      replayCurrent();
+      say(greetingFor({ phase: stationPhase(), visits: visitCount(), reading: lastReading() }));
     }
     input.current?.focus();
-  }, [replayCurrent, sound]);
+  }, [say, sound]);
 
   /** The tour: his bubble pops up and he walks the visitor round the set. */
   const startTour = useCallback(() => {
@@ -118,6 +128,7 @@ export function TransmissionDesk({
     const next = tourStep + 1;
     if (next >= tour.length) {
       setTourStep(null);
+      awardStamp("toured");
       return;
     }
     setTourStep(next);
@@ -260,6 +271,23 @@ export function TransmissionDesk({
     }
   }
 
+  /**
+   * Shares his current line as a still: the phone's share sheet where there
+   * is one, otherwise the link goes on the clipboard.
+   */
+  async function shareLine() {
+    if (!current?.sig) return;
+    const url = `${window.location.origin}/said?l=${encodeURIComponent(current.text.trim())}&s=${current.sig}`;
+    sound.key();
+    if (navigator.share) {
+      await navigator.share({ title: "Mr. P said", url }).catch(() => undefined);
+      return;
+    }
+    await navigator.clipboard.writeText(url).catch(() => undefined);
+    setCopied(current.id);
+    window.setTimeout(() => setCopied(null), 2000);
+  }
+
   /** What his line brings along: a file, the scope, a game. */
   const mounted = conversation.instruments;
   const touring = tourStep !== null;
@@ -279,6 +307,9 @@ export function TransmissionDesk({
   return (
     <div className="relative flex min-h-dvh flex-1 flex-col">
       <AsciiSpace className="absolute inset-0 size-full" />
+      <OnAir>
+        <VisitorSaucers />
+      </OnAir>
       <h1 className="sr-only">Talk to Mr. P</h1>
       <StationReadout
         archive={archive}
@@ -394,8 +425,24 @@ export function TransmissionDesk({
                         </div>
                       )}
 
+                      {/* A line worth keeping can go out as a still. */}
+                      {!touring && lineDone && current?.sig && (
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void shareLine();
+                            }}
+                            className="type-label px-1 text-muted-foreground outline-none hover:text-foreground focus-visible:text-foreground"
+                          >
+                            {copied === current.id ? "Link copied" : "⇪ Share this line"}
+                          </button>
+                        </div>
+                      )}
+
                       {/* The classic "more" cursor once he's said his piece. */}
-                      {lineDone && !touring && mounted.length === 0 && (
+                      {lineDone && !touring && mounted.length === 0 && !current?.sig && (
                         <span
                           aria-hidden="true"
                           className="absolute right-3 bottom-1 animate-bounce font-tube text-xl leading-none text-signal"

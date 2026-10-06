@@ -11,11 +11,15 @@ The personal site of Putu Mahendra (puma), built as a television. The whole site
 | 03 | `/sanctuary` | A live chat room where visitors talk to each other. |
 | 04 | `/projects` | Projects as VHS tapes on a shelf, one case study each. |
 | 00 | `/test-card` | SMPTE bars, the colophon, and live station status. |
+| – | `/guide` | The TV guide: what's on each channel, and every note and project as an episode. |
+| – | `/passport` | Stickers for exploring, kept in the visitor's browser. |
 | – | `/play` | The arcade: Star Catcher full screen, with the high-score table. |
 | – | `/guestbook` | One line per visitor, kept for good. |
 | – | `/teletext` | The plain facts for recruiters, printable. |
 
 Everything works from the keyboard: type anywhere to talk, `/` for slash commands (`/go`, `/whoami`, `/now`, `/resume`, `/theme`, `/effects`…), Alt and a number to change channel, `?` for the full map.
+
+On phones, a remote control in the top corner tunes the channels. The set behaves like a VCR: Back rewinds the tape, leaving the tab pauses it, and notes run a tape counter instead of a progress bar. Overnight (operator's time) the station signs off and Mr. P works the night shift; he also remembers returning visitors and where they stopped reading. Other visitors drift past the desk as tiny saucers, any of Mr. P's model replies can be shared as a still (signed, so they can't be forged), and there's a channel that isn't on the guide.
 
 ## Stack
 

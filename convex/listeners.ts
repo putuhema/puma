@@ -6,32 +6,39 @@ import { checkSession } from "./limits";
 const stale = 90_000;
 
 /**
- * When everyone tuned in last checked in. Queries can't watch the clock, so
- * the client counts who's still recent.
+ * Everyone tuned in: when they last checked in and which page they're on.
+ * Queries can't watch the clock, so the client counts who's still recent.
+ * Session ids stay private; pass yours to have your own row marked.
  */
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { sessionId: v.optional(v.string()) },
+  handler: async (ctx, { sessionId }) => {
     const tuned = await ctx.db
       .query("listeners")
       .withIndex("by_last_seen", (q) => q.gt("lastSeen", Date.now() - stale))
       .take(500);
-    return tuned.map((listener) => listener.lastSeen);
+    return tuned.map((listener) => ({
+      id: listener._id,
+      lastSeen: listener.lastSeen,
+      path: listener.path ?? "/",
+      mine: listener.sessionId === sessionId,
+    }));
   },
 });
 
 /** Check in from any page, and sweep out a few long-gone tabs. */
 export const heartbeat = mutation({
-  args: { sessionId: v.string() },
-  handler: async (ctx, { sessionId }) => {
+  args: { sessionId: v.string(), path: v.optional(v.string()) },
+  handler: async (ctx, { sessionId, path: rawPath }) => {
     checkSession(sessionId);
     const now = Date.now();
+    const path = rawPath?.slice(0, 120);
     const existing = await ctx.db
       .query("listeners")
       .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
       .unique();
-    if (existing) await ctx.db.patch(existing._id, { lastSeen: now });
-    else await ctx.db.insert("listeners", { sessionId, lastSeen: now });
+    if (existing) await ctx.db.patch(existing._id, { lastSeen: now, path });
+    else await ctx.db.insert("listeners", { sessionId, lastSeen: now, path });
 
     const gone = await ctx.db
       .query("listeners")

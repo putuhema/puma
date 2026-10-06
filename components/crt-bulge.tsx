@@ -82,7 +82,7 @@ function LensFilter({ id, lens, bulge }: { id: string; lens: Lens; bulge: number
 /**
  * The SVG lenses behind the curved tube. `#crt-glass` bends the raster on the
  * glass and is always on where it is cheap; `#crt-bulge` bends the picture
- * itself, which softens text, so it is the visitor's choice (Alt+B).
+ * itself; it's on by default, but it softens text, so Alt+B turns it off.
  */
 export function useCrtBulge() {
   const [lens, setLens] = useState<Lens | null>(null);

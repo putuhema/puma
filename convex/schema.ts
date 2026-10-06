@@ -22,6 +22,8 @@ export default defineSchema({
   listeners: defineTable({
     sessionId: v.string(),
     lastSeen: v.number(),
+    /** The page they're on, so others can see where people are. */
+    path: v.optional(v.string()),
   })
     .index("by_session", ["sessionId"])
     .index("by_last_seen", ["lastSeen"]),

@@ -34,6 +34,8 @@ const commands = [
   { name: "play", detail: "Star Catcher, right here", takes: false },
   { name: "resume", detail: "The plain facts, on teletext", takes: false },
   { name: "guestbook", detail: "Sign the station's book", takes: false },
+  { name: "guide", detail: "The TV guide: what's on", takes: false },
+  { name: "passport", detail: "Your stickers for exploring", takes: false },
   { name: "theme", detail: "Change the phosphor: white, green, amber", takes: false },
   { name: "effects", detail: "Scanlines, glow and static on or off", takes: false },
   { name: "mute", detail: "Sound on or off", takes: false },
@@ -51,7 +53,15 @@ const shortcuts: Record<string, string> = {
   home: "/",
   resume: "/teletext",
   guestbook: "/guestbook",
+  guide: "/guide",
+  passport: "/passport",
 };
+
+/**
+ * Off the menu on purpose: /tune takes a frequency, and only one of them
+ * has anything on it (the transmitter's, printed on its dial).
+ */
+const secretFrequencies = ["121.5", "121,5", "7", "07"];
 
 /** Everywhere /go can take you: the channels, the extras, then every project and note. */
 function routesFor(archive: Archive): Route[] {
@@ -248,6 +258,16 @@ export function useSlashCommands({
   /** Enter on a slash command: run it instead of talking. True if it was one. */
   function submit() {
     if (!active) return false;
+    if (command === "tune") {
+      const frequency = (argument ?? "").replace(/\s*(mhz|khz)$/, "");
+      if (secretFrequencies.includes(frequency)) {
+        go({ value: "channel-7", label: "Channel 07", detail: "", href: "/channel-7" });
+      } else {
+        sound.error();
+        setNotice({ draft, text: frequency ? `Just static on ${frequency}.` : "Tune to what? Give it a frequency." });
+      }
+      return true;
+    }
     if (command === "go" && argument !== null) {
       const exact = routes.find(
         (route) =>

@@ -19,6 +19,8 @@ export function TapeLibrary({ books }: { books: ArchiveBook[] }) {
   useEffect(() => {
     function operateMenu(event: KeyboardEvent) {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || books.length === 0) return;
+      // Typing somewhere (Mr. P's chat box) isn't steering the menu.
+      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable]")) return;
 
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();

@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
+import { getArchive } from "@/lib/content";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site";
 
@@ -76,7 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       )}
     >
       <body className="flex min-h-full flex-col [-webkit-tap-highlight-color:transparent]">
-        <SiteShell>{children}</SiteShell>
+        <SiteShell archive={getArchive()}>{children}</SiteShell>
       </body>
     </html>
   );

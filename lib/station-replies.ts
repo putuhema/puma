@@ -2,7 +2,7 @@ import type { Emotion } from "@/lib/emotions";
 import type { Archive, Instrument } from "@/lib/transmission";
 import { siteConfig } from "@/lib/site";
 
-type Reply = { text: string; instruments: Instrument[]; emotion: Emotion };
+export type Reply = { text: string; instruments: Instrument[]; emotion: Emotion };
 
 const intents: { pattern: RegExp; reply: (archive: Archive) => Reply }[] = [
   {
@@ -105,4 +105,11 @@ export const bootGreeting: Reply = {
   text: `Well, hiya there, earthling! I'm Mr. P, ${siteConfig.author}'s host around here. ${siteConfig.author} stepped away from the desk, so you've got me! Just type a question: the operator, the notes, the tapes, anything!`,
   instruments: ["commands"],
   emotion: "excited",
+};
+
+/** His hello when poked off the chat, where he floats in the corner. */
+export const pocketGreeting: Reply = {
+  text: "Hiya, earthling! Need a hand? Ask me anything about the operator, the notes, or the tapes.",
+  instruments: [],
+  emotion: "happy",
 };

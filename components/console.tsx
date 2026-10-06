@@ -9,6 +9,7 @@ import { DockedMrP } from "@/components/docked-mr-p";
 import { useSfx, useSound } from "@/components/sound-control";
 import { useStation } from "@/components/station-context";
 import { siteConfig } from "@/lib/site";
+import type { Archive } from "@/lib/transmission";
 import { cn } from "@/lib/utils";
 
 function isTypingTarget(target: EventTarget | null) {
@@ -48,7 +49,7 @@ function SoundSwitch() {
  * and sound. The tube face bulges toward the viewer, so the screen itself
  * scrolls; changing page tears the picture like a bad edit on tape.
  */
-export function Console({ children }: { children: ReactNode }) {
+export function Console({ archive, children }: { archive: Archive; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { screen } = useStation();
@@ -182,8 +183,8 @@ export function Console({ children }: { children: ReactNode }) {
           </div>
         </div>
       </div>
-      {/* Off the chat, Mr. P floats docked in the corner, out of the way. */}
-      {pathname !== "/" && <DockedMrP />}
+      {/* Off the chat, Mr. P floats docked in the corner; click him to chat. */}
+      {pathname !== "/" && <DockedMrP archive={archive} />}
       </div>
       <CrtOverlay curvedGlass={lensAvailable} />
     </>

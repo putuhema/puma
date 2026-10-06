@@ -638,11 +638,19 @@ class Limb {
 export function MrP3D({
   state,
   emotion,
+  label = "Mr. P, the station's host. Poke him.",
+  expanded,
+  onActivate,
   className,
 }: {
   state: MrPState;
   /** How the latest reply feels; he holds it for a while, then relaxes. */
   emotion: Emotion;
+  label?: string;
+  /** When clicking him opens something, whether it's open. */
+  expanded?: boolean;
+  /** Called after the poke, for when clicking him does something too. */
+  onActivate?: () => void;
   className?: string;
 }) {
   const host = useRef<HTMLButtonElement>(null);
@@ -1088,10 +1096,12 @@ export function MrP3D({
     <button
       ref={host}
       type="button"
-      aria-label="Mr. P, the station's host. Poke him."
+      aria-label={label}
+      aria-expanded={expanded}
       onClick={() => {
         poke.current();
         sound.key();
+        onActivate?.();
       }}
       className={cn("cursor-pointer outline-none focus-visible:drop-shadow-[0_0_10px_var(--osd)]", className)}
     />

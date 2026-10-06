@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import GithubSlugger from "github-slugger";
 import matter from "gray-matter";
+import type { Archive } from "@/lib/transmission";
 import {
   contentSections,
   type ContentSection,
@@ -195,6 +196,27 @@ export function getEntries(section?: ContentSection): ContentEntry[] {
       const bDate = b.updatedAt ?? b.publishedAt;
       return bDate.localeCompare(aDate);
     });
+}
+
+/** What Mr. P knows about: every published note and tape, trimmed down. */
+export function getArchive(): Archive {
+  return {
+    books: getEntries("books").map(({ href, title, author, bookYear, readingStatus, summary }) => ({
+      href,
+      title,
+      author,
+      bookYear,
+      readingStatus,
+      summary,
+    })),
+    notes: getEntries("notes").map(({ href, slug, title, publishedAt, summary }) => ({
+      href,
+      slug,
+      title,
+      publishedAt,
+      summary,
+    })),
+  };
 }
 
 export { formatEntryDate } from "@/lib/format";

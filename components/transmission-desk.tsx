@@ -12,142 +12,19 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AsciiSpace } from "@/components/ascii-space";
 import { InstrumentMount } from "@/components/instruments";
 import { KeyboardMap } from "@/components/keyboard-map";
-import { MrP3D, type MrPState } from "@/components/mr-p-3d";
+import { MrP3D } from "@/components/mr-p-3d";
 import { useSfx } from "@/components/sound-control";
+import { PrintedText, ThinkingDots } from "@/components/speech";
 import { useStation } from "@/components/station-context";
+import { useConversation } from "@/hooks/use-conversation";
 import { useWander } from "@/hooks/use-wander";
-import { bootGreeting, localReply, unclearReply } from "@/lib/station-replies";
-import {
-  type Archive,
-  type ChatEvent,
-  type ChatRequest,
-  type Instrument,
-  type Transmission,
-} from "@/lib/transmission";
-
-const printTickMs = 16;
-/** Long replies speed up so no line takes much more than ~2s to come in. */
-const printTicks = 120;
-/** A pause before canned replies, so the line still feels like it travels. */
-const localDelayMs = 420;
-
-function stamp() {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(Date.now());
-}
-
-function makeTransmission(
-  from: Transmission["from"],
-  text: string,
-  instruments: Instrument[] = [],
-  complete = true,
-): Transmission {
-  return { id: crypto.randomUUID(), from, text, instruments, time: stamp(), complete };
-}
+import { bootGreeting } from "@/lib/station-replies";
+import type { Archive } from "@/lib/transmission";
 
 function isTypingTarget(target: EventTarget | null) {
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable || target.matches("input, textarea, select, [role='textbox']"))
-  );
-}
-
-/** Reads /api/chat's NDJSON stream, one event per line. */
-async function* readEvents(body: ReadableStream<Uint8Array>) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (line.trim()) yield JSON.parse(line) as ChatEvent;
-    }
-  }
-}
-
-/**
- * Station text that comes in character by character. While a streamed reply
- * is still arriving it keeps up with the stream, then reports back once the
- * whole line is on screen.
- */
-function PrintedText({
-  text,
-  complete,
-  printing,
-  onTick,
-  onPrinted,
-}: {
-  text: string;
-  complete: boolean;
-  printing: boolean;
-  onTick: () => void;
-  onPrinted: () => void;
-}) {
-  const [count, setCount] = useState(printing ? 0 : text.length);
-  const shownCount = useRef(count);
-  const done = useRef(!printing);
-
-  useEffect(() => {
-    if (!printing) return;
-    const step = Math.max(1, Math.ceil(text.length / printTicks));
-    let ticks = 0;
-    const timer = window.setInterval(() => {
-      if (shownCount.current >= text.length) return;
-      if (ticks++ % 3 === 0) onTick();
-      shownCount.current = Math.min(text.length, shownCount.current + step);
-      setCount(shownCount.current);
-    }, printTickMs);
-    return () => window.clearInterval(timer);
-  }, [onTick, printing, text]);
-
-  // Fast-forwarding (printing turned off early) shows everything received.
-  const shown = printing ? count : text.length;
-  const finished = complete && shown >= text.length;
-
-  useEffect(() => {
-    if (finished && !done.current) {
-      done.current = true;
-      onPrinted();
-    }
-  }, [finished, onPrinted]);
-
-  return (
-    <p className="font-tube text-[1.375rem] leading-7 sm:text-2xl sm:leading-8">
-      <span aria-hidden={!finished}>{text.slice(0, shown)}</span>
-      {!finished && (
-        <span
-          aria-hidden="true"
-          className="ml-1 inline-block h-5 w-2.5 translate-y-0.5 animate-lamp bg-foreground shadow-[0_0_8px_var(--foreground)]"
-        />
-      )}
-      {finished ? null : <span className="sr-only">{text}</span>}
-    </p>
-  );
-}
-
-/** Mr. P mulling it over: three dots bobbing in his bubble. */
-function ThinkingDots() {
-  return (
-    <p aria-live="polite" className="flex h-8 items-center gap-2">
-      <span className="sr-only">Mr. P is thinking</span>
-      {[0, 1, 2].map((dot) => (
-        <span
-          key={dot}
-          aria-hidden="true"
-          className="size-2.5 animate-bounce bg-foreground shadow-[0_0_8px_var(--foreground)]"
-          style={{ animationDelay: `${dot * 140}ms` }}
-        />
-      ))}
-    </p>
   );
 }
 
@@ -171,11 +48,9 @@ export function TransmissionDesk({
   const reduceMotion = useReducedMotion();
   const sound = useSfx();
   const { setStatus, screen } = useStation();
-  const [log, setLog] = useState<Transmission[]>(() => [
-    { ...makeTransmission("station", bootGreeting.text, bootGreeting.instruments), emotion: bootGreeting.emotion },
-  ]);
-  const [printingId, setPrintingId] = useState<string | null>(null);
-  const [receiving, setReceiving] = useState(false);
+  const conversation = useConversation({ archive, greeting: bootGreeting });
+  const { current, lastWords, sentLines, receiving, busy, printingId, isPrinting, lineDone, finishPrinting } =
+    conversation;
   /** Whether his speech bubble is up: only once the visitor talks to him. */
   const [open, setOpen] = useState(false);
   /** Whether he's back at his spot; the bubble waits for him to get there. */
@@ -185,24 +60,10 @@ export function TransmissionDesk({
   const greeted = useRef(false);
   const [draft, setDraft] = useState("");
   const [keymapOpen, setKeymapOpen] = useState(false);
-  const antennaOffline = useRef(false);
   const pendingAsk = useRef(initialAsk ?? null);
   const recallIndex = useRef(-1);
   const input = useRef<HTMLInputElement>(null);
   const transcript = useRef<HTMLElement>(null);
-  const streaming = log.some((transmission) => !transmission.complete);
-  const busy = receiving || streaming || printingId !== null;
-  const mascotState: MrPState = receiving
-    ? "thinking"
-    : busy
-      ? "talking"
-      : draft.trim()
-        ? "listening"
-        : "idle";
-  const mascotEmotion =
-    [...log].reverse().find((transmission) => transmission.from === "station" && transmission.emotion)?.emotion ??
-    "happy";
-  const sentLines = log.filter((transmission) => transmission.from === "visitor").map(({ text }) => text);
 
   useEffect(() => {
     setStatus(receiving ? "receiving" : busy ? "printing" : "standby");
@@ -211,132 +72,22 @@ export function TransmissionDesk({
   useEffect(() => () => setStatus("standby"), [setStatus]);
 
   // A new line from Mr. P: bring him and his bubble back into view.
-  const current = [...log].reverse().find((transmission) => transmission.from === "station");
-  const lastWords = [...log].reverse().find((transmission) => transmission.from === "visitor");
   const currentId = current?.id;
   useEffect(() => {
     screen.current?.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }, [currentId, reduceMotion, screen]);
 
-  const startReply = useCallback(
-    (reply: Transmission) => {
-      setReceiving(false);
-      setLog((current) => [...current, reply]);
-      setPrintingId(reduceMotion ? null : reply.id);
-    },
-    [reduceMotion],
-  );
-
-  const deliverLocal = useCallback(
-    (question: string) => {
-      const reply = localReply(question, archive) ?? unclearReply();
-      if (!localReply(question, archive)) sound.error();
-      startReply({ ...makeTransmission("station", reply.text, reply.instruments), emotion: reply.emotion });
-    },
-    [archive, sound, startReply],
-  );
-
+  const { ask: send, replayCurrent, skip } = conversation;
   const ask = useCallback(
-    async (question: string, viaSoftKey = false) => {
-      const text = question.trim();
-      if (!text || busy) return;
-
-      sound.send();
+    (question: string, viaSoftKey = false) => {
+      if (!question.trim() || busy) return;
       recallIndex.current = -1;
       greeted.current = true;
       setOpen(true);
-
-      if (/^(clear|cls|reset|rewind)$/i.test(text)) {
-        const greeting: Transmission = {
-          ...makeTransmission("station", "Rewound and ready! Fresh tape, fresh start. What'll it be?", ["commands"]),
-          emotion: "excited",
-        };
-        setLog([greeting]);
-        setPrintingId(reduceMotion ? null : greeting.id);
-        return;
-      }
-
-      const visitor = makeTransmission("visitor", text);
-      const history = [...log, visitor];
-      setLog(history);
-      setReceiving(true);
-
-      if (viaSoftKey || antennaOffline.current) {
-        window.setTimeout(() => deliverLocal(text), localDelayMs);
-        return;
-      }
-
-      const reply = makeTransmission("station", "", [], false);
-      let started = false;
-
-      try {
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            history: history.map(({ from, text }) => ({ from, text })),
-          } satisfies ChatRequest),
-        });
-
-        if (response.status === 429) {
-          // Rate limited: he needs a breather, and says so, rather than faking a reply.
-          const { retryAfter } = (await response.json().catch(() => ({}))) as { retryAfter?: number };
-          const wait = Math.max(1, Math.ceil(retryAfter ?? 60));
-          sound.error();
-          startReply({
-            ...makeTransmission(
-              "station",
-              `Whoa, slow down, space cadet! My antennae are all frazzled. Give me ${wait} second${wait === 1 ? "" : "s"} to cool off, then ask me again.`,
-            ),
-            emotion: "dizzy",
-          });
-          return;
-        }
-
-        if (!response.ok || !response.body) {
-          antennaOffline.current = response.status === 503;
-          throw new Error(`antenna ${response.status}`);
-        }
-
-        for await (const event of readEvents(response.body)) {
-          if (event.type === "text") {
-            if (!started) {
-              started = true;
-              sound.receive();
-              startReply(reply);
-            }
-            setLog((current) =>
-              current.map((item) => (item.id === reply.id ? { ...item, text: item.text + event.text } : item)),
-            );
-          } else if (started) {
-            setLog((current) =>
-              current.map((item) =>
-                item.id === reply.id
-                  ? { ...item, instruments: event.instruments, emotion: event.emotion, complete: true }
-                  : item,
-              ),
-            );
-          }
-        }
-
-        if (!started) throw new Error("empty transmission");
-      } catch {
-        if (started) {
-          // Signal dropped mid-reply: keep what arrived and close the line.
-          setLog((current) =>
-            current.map((item) => (item.id === reply.id ? { ...item, complete: true } : item)),
-          );
-          return;
-        }
-        deliverLocal(text);
-      }
+      void send(question, viaSoftKey);
     },
-    [busy, deliverLocal, log, reduceMotion, sound, startReply],
+    [busy, send],
   );
-
-  const finishPrinting = useCallback((transmission: Transmission) => {
-    setPrintingId((current) => (current === transmission.id ? null : current));
-  }, []);
 
   /** Walk up to him: the bubble pops up, with his hello the first time. */
   const talk = useCallback(() => {
@@ -344,17 +95,16 @@ export function TransmissionDesk({
     setOpen(true);
     if (!greeted.current) {
       greeted.current = true;
-      const greeting = [...log].reverse().find((transmission) => transmission.from === "station");
-      setPrintingId(reduceMotion || !greeting ? null : greeting.id);
+      replayCurrent();
     }
     input.current?.focus();
-  }, [log, reduceMotion, sound]);
+  }, [replayCurrent, sound]);
 
   const close = useCallback(() => {
     setOpen(false);
-    setPrintingId(null);
+    skip();
     input.current?.focus();
-  }, []);
+  }, [skip]);
 
   // A question carried in the URL (?ask=…) goes out once the greeting is done.
   useEffect(() => {
@@ -362,7 +112,7 @@ export function TransmissionDesk({
     const timer = window.setTimeout(() => {
       const queued = pendingAsk.current;
       pendingAsk.current = null;
-      if (queued) void ask(queued, true);
+      if (queued) ask(queued, true);
     }, 250);
     return () => window.clearTimeout(timer);
   }, [ask, busy]);
@@ -389,7 +139,7 @@ export function TransmissionDesk({
           setKeymapOpen(false);
           event.preventDefault();
         } else if (printingId) {
-          setPrintingId(null);
+          skip();
           event.preventDefault();
         } else if (!onLine && transcript.current?.contains(event.target as Node)) {
           input.current?.focus();
@@ -426,12 +176,12 @@ export function TransmissionDesk({
 
     window.addEventListener("keydown", operateDesk);
     return () => window.removeEventListener("keydown", operateDesk);
-  }, [ask, close, draft, focusLatestInstrument, keymapOpen, open, printingId, receiving]);
+  }, [close, draft, focusLatestInstrument, keymapOpen, open, printingId, receiving, skip]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    void ask(draft);
+    ask(draft);
     setDraft("");
   }
 
@@ -451,12 +201,8 @@ export function TransmissionDesk({
     }
   }
 
-  const isPrinting = current?.id === printingId;
-  const showInstruments =
-    current && current.complete && !isPrinting && !receiving && current.instruments.length > 0;
-  const lineDone = current && current.complete && !isPrinting && !receiving;
   /** Showing something hands-on (a file, the scope, a game) rather than just talk. */
-  const showcase = showInstruments && current.instruments.some((instrument) => instrument !== "commands");
+  const showcase = conversation.instruments.some((instrument) => instrument !== "commands");
 
   // Left alone, he plays around the stage; talk to him (or start typing) and
   // he flies back to answer.
@@ -486,7 +232,7 @@ export function TransmissionDesk({
                 ref={transcript}
                 aria-label="Mr. P says"
                 aria-live="polite"
-                onClick={() => printingId && setPrintingId(null)}
+                onClick={() => printingId && skip()}
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6, y: 24 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.7, y: 20, transition: { duration: 0.15 } }}
@@ -537,14 +283,14 @@ export function TransmissionDesk({
                           />
                         )}
 
-                        {showInstruments && (
+                        {conversation.instruments.length > 0 && (
                           <div className="mt-5 flex flex-col gap-5">
-                            {current.instruments.map((instrument) => (
+                            {conversation.instruments.map((instrument) => (
                               <div key={instrument} data-instrument={instrument}>
                                 <InstrumentMount
                                   instrument={instrument}
                                   archive={archive}
-                                  onAsk={(question) => void ask(question, true)}
+                                  onAsk={(question) => ask(question, true)}
                                 />
                               </div>
                             ))}
@@ -593,8 +339,8 @@ export function TransmissionDesk({
               )}
             </AnimatePresence>
             <MrP3D
-              state={mascotState}
-              emotion={mascotEmotion}
+              state={conversation.mascotState(draft)}
+              emotion={conversation.emotion}
               className="block h-64 w-60 sm:h-80 sm:w-80"
             />
           </div>
